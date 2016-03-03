@@ -1,17 +1,25 @@
 # bigrquery
 
-[![Build Status](https://travis-ci.org/hadley/bigrquery.png?branch=master)](https://travis-ci.org/hadley/bigrquery)
+[![Build Status](https://travis-ci.org/rstats-db/bigrquery.svg?branch=master)](https://travis-ci.org/rstats-db/bigrquery)
 
 The bigrquery packages provides an R interface to
 [Google BigQuery](https://developers.google.com/bigquery/). It makes it easy
 to retrieve metadata about your projects, datasets, tables and jobs, and
 provides a convenient wrapper for working with bigquery from R.
 
-bigrquery is not currently available on CRAN, but you can install it with
-devtools:
+## Installation
+
+The current bigrquery release can be installed from CRAN: 
 
 ```R
-devtools::install_github("hadley/bigrquery")
+install.packages("bigrquery")
+```
+
+The newest development release can be installed from github:
+
+```R
+# install.packages('devtools')
+devtools::install_github("rstats-db/bigrquery")
 ```
 
 ## Authentication
@@ -39,7 +47,7 @@ don't even need to provide a credit card).
 
 To create a project:
 
-1. Open https://cloud.google.com/console
+1. Open https://console.cloud.google.com/
 2. Click "Create Project" at the top
 3. Select a name and project ID, and click "Create"
 4. Turn on the BigQuery API by clicking "APIs & Auth" on the left, scrolling
@@ -64,4 +72,4 @@ query_exec(sql, project = project)
 * [SQL reference](https://developers.google.com/bigquery/query-reference)
 * [API reference](https://developers.google.com/bigquery/docs/reference/v2/)
 * [Query/job console](https://bigquery.cloud.google.com/)
-* [Billing console](https://cloud.google.com/console)
+* [Billing console](https://console.cloud.google.com/)

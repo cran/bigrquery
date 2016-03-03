@@ -1,7 +1,8 @@
-.onAttach <- function(libname, pkgname) {
+.onLoad <- function(libname, pkgname) {
   op <- options()
   defaults <- list(
-    bigquery.quiet = NA
+    bigrquery.quiet = NA,
+    bigrquery.page.size = 1e4
   )
   toset <- !(names(defaults) %in% names(op))
   if (any(toset)) options(defaults[toset])

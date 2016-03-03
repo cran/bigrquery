@@ -1,7 +1,7 @@
 Package: bigrquery
-Title: An Interface to Google's BigQuery API
-Description: Easily talk to Google's BigQuery database from R.
-Version: 0.1.0
+Title: An Interface to Google's 'BigQuery' 'API'
+Description: Easily talk to Google's 'BigQuery' database from R.
+Version: 0.2.0
 Authors@R: c(
     person("Hadley", "Wickham", , "hadley@rstudio.com", c("aut", "cre")),
     person("RStudio", role = "cph")
@@ -11,10 +11,11 @@ Imports: httr, jsonlite, assertthat, R6 (>= 2.0.0), dplyr (>= 0.3.0)
 Suggests: testthat
 License: GPL-3
 LazyData: true
-Packaged: 2015-01-13 14:16:38 UTC; hadley
+RoxygenNote: 5.0.1
+NeedsCompilation: no
+Packaged: 2016-03-03 17:07:22 UTC; hadley
 Author: Hadley Wickham [aut, cre],
   RStudio [cph]
 Maintainer: Hadley Wickham <hadley@rstudio.com>
-NeedsCompilation: no
 Repository: CRAN
-Date/Publication: 2015-01-13 16:41:14
+Date/Publication: 2016-03-03 20:15:22
