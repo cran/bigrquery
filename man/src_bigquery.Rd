@@ -4,7 +4,7 @@
 \alias{src_bigquery}
 \title{A bigquery data source.}
 \usage{
-src_bigquery(project, dataset, billing = project)
+src_bigquery(project, dataset, billing = project, max_pages = 10)
 }
 \arguments{
 \item{project}{project id or name}
@@ -12,6 +12,8 @@ src_bigquery(project, dataset, billing = project)
 \item{dataset}{dataset name}
 
 \item{billing}{billing project, if different to \code{project}}
+
+\item{max_pages}{(IGNORED) max pages returned by a query}
 }
 \description{
 Use \code{src_bigquery} to connect to an existing bigquery dataset,
@@ -23,7 +25,7 @@ library(dplyr)
 
 # To run this example, replace billing with the id of one of your projects
 # set up for billing
-pd <- src_bigquery("publicdata", "samples", billing = "465736758727")
+pd <- src_bigquery("publicdata", "samples", billing = "887175176791")
 pd \%>\% tbl("shakespeare")
 
 # With bigquery data, it's always a good idea to start by selecting
@@ -35,6 +37,7 @@ natality <- pd \%>\%
 year_weights <- natality \%>\%
   group_by(year) \%>\%
   summarise(weight = mean(weight_pounds), n = n()) \%>\%
+  arrange(year) \%>\%
   collect()
 plot(year_weights$year, year_weights$weight, type = "b")
 }
