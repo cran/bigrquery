@@ -1,13 +1,19 @@
-#' @include dbi-driver.r upload.r
+#' @include dbi-driver.r
 NULL
 
-BigQueryConnection <- function(project, dataset, billing) {
-  ret <- new(
-    "BigQueryConnection",
+BigQueryConnection <- function(project, dataset, billing,
+                               page_size = 1e4,
+                               quiet = NA,
+                               use_legacy_sql = TRUE) {
+  ret <- new("BigQueryConnection",
     project = project,
     dataset = dataset,
     billing = billing,
-    .envir = new.env(parent = emptyenv()))
+    page_size = as.integer(page_size),
+    quiet = quiet,
+    use_legacy_sql = use_legacy_sql,
+    .envir = new.env(parent = emptyenv())
+  )
   ret@.envir$valid <- TRUE
   ret
 }
@@ -21,6 +27,9 @@ setClass(
     project = "character",
     dataset = "character",
     billing = "character",
+    use_legacy_sql = "logical",
+    page_size = "integer",
+    quiet = "logical",
     .envir = "environment"
   )
 )
@@ -70,7 +79,10 @@ setMethod(
     assert_connection_valid(conn)
 
     unset_result(conn)
-    res <- BigQueryResult(connection = conn, statement = statement)
+    res <- BigQueryResult(
+      connection = conn,
+      statement = statement
+    )
     set_result(conn, res)
     res
   })
@@ -81,11 +93,8 @@ setMethod(
 setMethod(
   "dbQuoteString", c("BigQueryConnection", "character"),
   function(conn, x, ...) {
-    x_na <- is.na(x)
-    x <- gsub("\\", "\\\\", x, fixed = TRUE)
-    x <- gsub("'", "\\'", x, fixed = TRUE)
-    x <- paste0("'", x, "'")
-    x[x_na] <- "NULL"
+    x <- encodeString(x, na.encode = FALSE, quote = "'")
+    x[is.na(x)] <- "NULL"
     SQL(x)
   })
 
@@ -95,20 +104,24 @@ setMethod(
 setMethod(
   "dbQuoteIdentifier", c("BigQueryConnection", "character"),
   function(conn, x, ...) {
-    SQL(paste0("[", x, "]", collapse = "."))
+    if (conn@use_legacy_sql) {
+      SQL(paste0("[", x, "]"))
+    } else {
+      SQL(encodeString(x, quote = "`"))
+    }
   })
 
 #' @rdname DBI
 #' @inheritParams DBI::dbWriteTable
-#' @param row.names A logical specifying whether the \code{row.names} should be
-#'   output to the output DBMS table; if \code{TRUE}, an extra field whose name
-#'   will be whatever the R identifier \code{"row.names"} maps to the DBMS (see
-#'   \code{\link[DBI]{make.db.names}}). If \code{NA} will add rows names if
+#' @param row.names A logical specifying whether the `row.names` should be
+#'   output to the output DBMS table; if `TRUE`, an extra field whose name
+#'   will be whatever the R identifier `"row.names"` maps to the DBMS (see
+#'   [DBI::make.db.names()]). If `NA` will add rows names if
 #'   they are characters, otherwise will ignore.
 #' @param overwrite a logical specifying whether to overwrite an existing table
-#'   or not. Its default is \code{FALSE}.
+#'   or not. Its default is `FALSE`.
 #' @param append a logical specifying whether to append to an existing table
-#'   in the DBMS.  Its default is \code{FALSE}.
+#'   in the DBMS.  Its default is `FALSE`.
 #' @export
 setMethod(
   "dbWriteTable", c("BigQueryConnection", "character", "data.frame"),
@@ -128,11 +141,13 @@ setMethod(
 
     data <- DBI::sqlRownamesToColumn(value, row.names = row.names)
 
-    job <- insert_upload_job(conn@project, conn@dataset, name, data,
-                             conn@billing,
-                             create_disposition = create_disposition,
-                             write_disposition = write_disposition)
-    job <- wait_for(job)
+    job <- insert_upload_job(
+      conn@project, conn@dataset, name, data,
+      conn@billing,
+      create_disposition = create_disposition,
+      write_disposition = write_disposition
+    )
+    job <- wait_for(job, conn@quiet)
     invisible(TRUE)
   })
 

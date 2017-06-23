@@ -4,10 +4,14 @@
 \alias{list_datasets}
 \title{List the datasets in a project}
 \usage{
-list_datasets(project)
+list_datasets(project, page_size = 50, max_pages = Inf)
 }
 \arguments{
 \item{project}{The project name, a string}
+
+\item{page_size}{Number of items per page}
+
+\item{max_pages}{Maximum number of pages to retrieve}
 }
 \value{
 a character vector of dataset names
@@ -23,10 +27,9 @@ list_datasets("githubarchive")
 }
 \seealso{
 Google API documentation:
-  \url{https://developers.google.com/bigquery/docs/reference/v2/datasets/list}
+\url{https://developers.google.com/bigquery/docs/reference/v2/datasets/list}
 
 Other datasets: \code{\link{delete_dataset}},
   \code{\link{get_dataset}}, \code{\link{insert_dataset}},
   \code{\link{update_dataset}}
 }
-

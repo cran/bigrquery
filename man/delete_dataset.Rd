@@ -24,10 +24,9 @@ delete_dataset("myproject", "emptydataset")
 }
 \seealso{
 Google API documentation:
-  \url{https://cloud.google.com/bigquery/docs/reference/v2/datasets/delete}
+\url{https://cloud.google.com/bigquery/docs/reference/v2/datasets/delete}
 
 Other datasets: \code{\link{get_dataset}},
   \code{\link{insert_dataset}},
   \code{\link{list_datasets}}, \code{\link{update_dataset}}
 }
-

@@ -7,9 +7,9 @@
 delete_table(project, dataset, table)
 }
 \arguments{
-\item{project}{project containing this table}
+\item{project}{The project name, a string}
 
-\item{dataset}{dataset containing this table}
+\item{dataset}{The name of the dataset to create, a string}
 
 \item{table}{name of the table}
 }
@@ -23,9 +23,8 @@ get_table("publicdata", "samples", "natality")
 }
 \seealso{
 API documentation:
- \url{https://developers.google.com/bigquery/docs/reference/v2/tables/delete}
+\url{https://developers.google.com/bigquery/docs/reference/v2/tables/delete}
 
 Other tables: \code{\link{get_table}},
   \code{\link{list_tables}}
 }
-

@@ -17,16 +17,16 @@ list_tabledata_callback(project, dataset, table, callback, table_info = NULL,
 list_tabledata_iter(project, dataset, table, table_info = NULL)
 }
 \arguments{
-\item{project}{project containing this table}
+\item{project}{The project name, a string}
 
-\item{dataset}{dataset containing this table}
+\item{dataset}{The name of the dataset to create, a string}
 
 \item{table}{name of the table}
 
 \item{page_size}{Number of items per page.}
 
 \item{table_info}{if known, the table information retrieved with
-\code{\link{get_table}}}
+\code{\link[=get_table]{get_table()}}}
 
 \item{max_pages}{maximum number of pages to retrieve. Use \code{Inf}
 to retrieve the complete dataset.}
@@ -39,17 +39,24 @@ be pulled down from database.}
 \item{callback}{function called with single argument, the data from the
 current page of data}
 }
-\description{
+\value{
 \code{list_tabledata} returns a single dataframe.
+
+\code{list_tabledata_iter} returns a named list with functions
+\itemize{
+\item \code{next_} (fetches one chunk of rows)
+\item \code{next_paged} (fetches arbitrarily many rows using a specified page size)
+\item \code{is_complete} (checks if all rows have been fetched)
+\item \code{get_schema} (returns the schema of the table),
+\item \code{get_rows_fetched} (returns the number of rows already fetched).
+\item \code{get_rows} (returns total number of rows)
+}
+}
+\description{
+Retrieve data from a table.
 
 \code{list_tabledata_callback} calls the supplied callback with each page
 of data.
-
-\code{list_tabledata_iter} returns a named list with functions \code{next_}
-(fetches one chunk of rows), \code{next_paged} (fetches arbitrarily many
-rows using a specified page size), \code{is_complete} (checks if all rows
-have been fetched), \code{get_schema} (returns the schema of the table),
-and \code{get_rows_fetched} (returns the number of rows already fetched).
 }
 \examples{
 \dontrun{
@@ -61,6 +68,5 @@ dim(natal)
 }
 \seealso{
 API documentation at
-  \url{https://developers.google.com/bigquery/docs/reference/v2/tabledata/list}
+\url{https://developers.google.com/bigquery/docs/reference/v2/tabledata/list}
 }
-

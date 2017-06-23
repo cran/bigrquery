@@ -4,16 +4,16 @@
 \alias{insert_dataset}
 \title{Creates a new dataset in a project}
 \usage{
-insert_dataset(project, dataset, description = NULL, friendlyName = NULL)
+insert_dataset(project, dataset, ...)
 }
 \arguments{
 \item{project}{The project name, a string}
 
 \item{dataset}{The name of the dataset to create, a string}
 
-\item{description}{The dataset description, a string}
-
-\item{friendlyName}{The dataset's friendly name, a string}
+\item{...}{Additional arguments merged into the body of the
+request. \code{snake_case} will automatically be converted into
+\code{camelCase} so you can use consistent argument names.}
 }
 \description{
 Creates a new dataset in a project
@@ -25,10 +25,9 @@ insert_dataset("myproject", "new_dataset")
 }
 \seealso{
 Google API documentation:
-  \url{https://cloud.google.com/bigquery/docs/reference/v2/datasets/insert}
+\url{https://cloud.google.com/bigquery/docs/reference/v2/datasets/insert}
 
 Other datasets: \code{\link{delete_dataset}},
   \code{\link{get_dataset}}, \code{\link{list_datasets}},
   \code{\link{update_dataset}}
 }
-

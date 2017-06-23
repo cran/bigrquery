@@ -1,23 +1,26 @@
 #' DBI methods
 #'
-#' Implementations of pure virtual functions defined in the \code{DBI} package.
+#' Implementations of pure virtual functions defined in the `DBI` package.
 #' @name DBI
 NULL
 
 #' BigQuery DBI driver
 #'
-#' Creates a BigQuery DBI driver for use in \code{\link[DBI]{dbConnect}}.
+#' Creates a BigQuery DBI driver for use in [DBI::dbConnect()].
 #'
 #' @export
 #' @import methods DBI
 #' @examples
 #' \dontrun{
-#' #' library(DBI)
-#' dbConnect(dbi_driver(), database = "mydb", project = "myproject")
+#' DBI::dbConnect(bigquery(), dataset = "mydb", project = "myproject")
 #' }
 dbi_driver <- function() {
   new("BigQueryDriver")
 }
+
+#' @export
+#' @rdname dbi_driver
+bigquery <- dbi_driver
 
 #' @rdname DBI
 #' @export
@@ -35,11 +38,23 @@ setMethod(
 #' @rdname DBI
 #' @inheritParams DBI::dbConnect
 #' @inheritParams insert_upload_job
+#' @inheritParams query_exec
 #' @export
 setMethod(
   "dbConnect", "BigQueryDriver",
-  function(drv, project, dataset, billing = project, ...) {
-    BigQueryConnection(project = project, dataset = dataset, billing = billing)
+  function(drv, project, dataset, billing = project,
+           page_size = 1e4,
+           quiet = NA,
+           use_legacy_sql = TRUE,
+           ...) {
+    BigQueryConnection(
+      project = project,
+      dataset = dataset,
+      billing = billing,
+      page_size = page_size,
+      quiet = quiet,
+      use_legacy_sql = use_legacy_sql
+    )
   }
 )
 
@@ -64,3 +79,14 @@ setMethod(
       max.connections = NA
     )
   })
+
+
+#' @rdname DBI
+#' @inheritParams DBI::dbDataType
+#' @export
+setMethod(
+  "dbDataType", "BigQueryDriver",
+  function(dbObj, obj, ...) {
+    data_type(obj)
+  }
+)

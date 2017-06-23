@@ -6,7 +6,8 @@ BigQueryResult <- function(connection, statement) {
     "BigQueryResult",
     connection = connection,
     statement = statement,
-    .envir = new.env(parent = emptyenv()))
+    .envir = new.env(parent = emptyenv())
+  )
 
   res@.envir$open <- TRUE
 
@@ -14,11 +15,16 @@ BigQueryResult <- function(connection, statement) {
     query = statement,
     project = connection@billing,
     destination_table = NULL,
-    default_dataset = format_dataset(connection@project, connection@dataset)
+    default_dataset = format_dataset(connection@project, connection@dataset),
+    use_legacy_sql = connection@use_legacy_sql,
+    quiet = connection@quiet
   )
 
   res@.envir$iter <- list_tabledata_iter(
-    project = dest$projectId, dataset = dest$datasetId, table = dest$tableId)
+    project = dest$projectId,
+    dataset = dest$datasetId,
+    table = dest$tableId
+  )
 
   res
 }
@@ -66,6 +72,7 @@ setMethod(
     if (!dbIsValid(res)) {
       warning("Result already closed.", call. = FALSE)
     }
+
     res@.envir$open <- FALSE
     set_result(res@connection, NULL)
 
@@ -82,7 +89,7 @@ setMethod(
 
     if (n < 0) n <- Inf
 
-    data <- res@.envir$iter$next_paged(n)
+    data <- res@.envir$iter$next_paged(n, page_size = res@connection@page_size)
 
     DBI::sqlColumnToRownames(data, row.names = row.names)
   })
@@ -116,9 +123,11 @@ setMethod(
   function(res, ...) {
     schema <- res@.envir$iter$get_schema()
 
-    data.frame(name = vapply(schema$fields, function(x) x$name, character(1)),
-               type = vapply(schema$fields, function(x) x$type, character(1)),
-               stringsAsFactors = FALSE)
+    data.frame(
+      name = vapply(schema$fields, function(x) x$name, character(1)),
+      type = vapply(schema$fields, function(x) x$type, character(1)),
+      stringsAsFactors = FALSE
+    )
   })
 
 #' @rdname DBI

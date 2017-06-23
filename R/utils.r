@@ -49,3 +49,36 @@ rsplit_one <- function(str, sep) {
   }
   list(left = left, right = right)
 }
+
+bq_progress <- function(..., quiet = NA) {
+  delay <- if (isFALSE(quiet)) 0 else 1
+  quiet <- if (is.na(quiet)) !interactive() else FALSE
+
+  if (quiet) {
+    list(
+      tick = function(...) {},
+      update = function(...) {}
+    )
+  } else {
+    progress <- progress::progress_bar$new(..., show_after = delay)
+    progress$tick(0)
+    progress
+  }
+
+}
+isFALSE <- function(x) identical(x, FALSE)
+
+
+size_units <- function(x) {
+  i <- floor(log2(x) / 10)
+  unit <- c("", "kilo", "mega", "giga", "tera", "peta", "exa", "zetta", "yotta")[i + 1]
+
+  structure(x, i = i, unit = unit, class = "size")
+}
+#' @export
+format.size <- function(x, ...) {
+  if (x == 0) return("0 bytes")
+
+  y <- x * 1024 ^ -attr(x, "i")
+  sprintf("%.1f %sbytes", y, attr(x, "unit"))
+}

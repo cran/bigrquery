@@ -7,8 +7,8 @@
 wait_for(job, quiet = getOption("bigrquery.quiet"), pause = 0.5)
 }
 \arguments{
-\item{job}{job to wait for. Probably result of \code{\link{insert_query_job}}
-or \code{\link{insert_upload_job}}}
+\item{job}{job to wait for. Probably result of \code{\link[=insert_query_job]{insert_query_job()}}
+or \code{\link[=insert_upload_job]{insert_upload_job()}}}
 
 \item{quiet}{if \code{FALSE} print informative progress messages, if
 \code{TRUE} is silent, if \code{NA} displays messages for long-running
@@ -21,7 +21,7 @@ Wait for a job to complete, optionally printing updates
 }
 \seealso{
 Other jobs: \code{\link{get_job}},
+  \code{\link{insert_extract_job}},
   \code{\link{insert_query_job}},
   \code{\link{insert_upload_job}}
 }
-

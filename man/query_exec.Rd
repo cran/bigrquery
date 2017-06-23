@@ -7,12 +7,13 @@
 query_exec(query, project, destination_table = NULL, default_dataset = NULL,
   page_size = 10000, max_pages = 10, warn = TRUE,
   create_disposition = "CREATE_IF_NEEDED",
-  write_disposition = "WRITE_EMPTY")
+  write_disposition = "WRITE_EMPTY", use_legacy_sql = TRUE,
+  quiet = getOption("bigrquery.quiet"), ...)
 }
 \arguments{
 \item{query}{SQL query string}
 
-\item{project}{project name}
+\item{project}{The project name, a string}
 
 \item{destination_table}{(optional) destination table for large queries,
 either as a string in the format used by BigQuery, or as a list with
@@ -41,12 +42,20 @@ defaults to \code{"WRITE_EMPTY"}, other possible values are
 \code{"WRITE_TRUNCATE"} and \code{"WRITE_APPEND"}; see
 \href{https://cloud.google.com/bigquery/docs/reference/v2/jobs#configuration.query.writeDisposition}{the API documentation}
 for more information}
+
+\item{use_legacy_sql}{(optional) set to \code{FALSE} to enable BigQuery's standard SQL.}
+
+\item{quiet}{if \code{FALSE}, prints informative status messages.}
+
+\item{...}{Additional arguments merged into the body of the
+request. \code{snake_case} will automatically be converted into
+\code{camelCase} so you can use consistent argument names.}
 }
 \description{
 This is a high-level function that inserts a query job
-(with \code{\link{insert_query_job}}), repeatedly checks the status (with
-\code{\link{get_job}}) until it is complete, then retrieves the results
-(with \code{\link{list_tabledata}})
+(with \code{\link[=insert_query_job]{insert_query_job()}}), repeatedly checks the status (with
+\code{\link[=get_job]{get_job()}}) until it is complete, then retrieves the results
+(with \code{\link[=list_tabledata]{list_tabledata()}})
 }
 \examples{
 \dontrun{
@@ -62,9 +71,8 @@ query_exec(sql, project = project, default_dataset = "publicdata:samples")
 }
 \seealso{
 Google documentation describing asynchronous queries:
- \url{https://developers.google.com/bigquery/docs/queries#asyncqueries}
+\url{https://developers.google.com/bigquery/docs/queries#asyncqueries}
 
- Google documentation for handling large results:
- \url{https://developers.google.com/bigquery/querying-data#largequeryresults}
+Google documentation for handling large results:
+\url{https://developers.google.com/bigquery/querying-data#largequeryresults}
 }
-

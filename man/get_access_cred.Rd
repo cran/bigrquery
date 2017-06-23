@@ -2,12 +2,15 @@
 % Please edit documentation in R/auth.r
 \name{get_access_cred}
 \alias{get_access_cred}
-\alias{reset_access_cred}
+\alias{set_oauth2.0_cred}
 \alias{set_access_cred}
+\alias{reset_access_cred}
 \alias{set_service_token}
 \title{Get and set access credentials}
 \usage{
 get_access_cred()
+
+set_oauth2.0_cred(app = NULL)
 
 set_access_cred(value)
 
@@ -16,8 +19,11 @@ reset_access_cred()
 set_service_token(service_token)
 }
 \arguments{
+\item{app}{A Google OAuth application created using
+\code{\link[httr]{oauth_app}}}
+
 \item{value}{new access credentials, as returned by
-\code{\link[httr]{oauth2.0_token}}}
+\code{\link[httr:oauth2.0_token]{httr::oauth2.0_token()}}}
 
 \item{service_token}{A JSON string, URL or file, giving or pointing to
 the service token file.}
@@ -35,5 +41,5 @@ for non-interactive authentication.
 To manage your google projects, use the API console:
 \url{https://console.cloud.google.com/}
 }
-\keyword{internal}
 
+\keyword{internal}

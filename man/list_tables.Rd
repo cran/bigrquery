@@ -4,15 +4,16 @@
 \alias{list_tables}
 \title{List available tables in dataset.}
 \usage{
-list_tables(project, dataset, max_results = NULL)
+list_tables(project, dataset, page_size = 50, max_pages = Inf)
 }
 \arguments{
-\item{project}{project containing this table}
+\item{project}{The project name, a string}
 
-\item{dataset}{dataset containing this table}
+\item{dataset}{The name of the dataset to create, a string}
 
-\item{max_results}{(optional) Maximum number of results to
-retrieve.}
+\item{page_size}{Number of items per page}
+
+\item{max_pages}{Maximum number of pages to retrieve}
 }
 \value{
 a character vector of table names
@@ -24,14 +25,13 @@ List available tables in dataset.
 \dontrun{
 list_tables("publicdata", "samples")
 list_tables("githubarchive", "github")
-list_tables("publicdata", "samples", max_results = 2)
+list_tables("publicdata", "samples", max_pages = 2, page_size = 2)
 }
 }
 \seealso{
 API documentation:
-  \url{https://developers.google.com/bigquery/docs/reference/v2/tables/list}
+\url{https://developers.google.com/bigquery/docs/reference/v2/tables/list}
 
 Other tables: \code{\link{delete_table}},
   \code{\link{get_table}}
 }
-

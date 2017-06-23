@@ -14,7 +14,7 @@ bq_env <- new.env(parent = emptyenv())
 #' bigrquery maintains package-wide OAuth authentication credentials in a
 #' private environment. In ordinary operation, you should never need to use
 #' these functions but they are provided in case you want to switch
-#' credentials mid-stream. You may can use \code{set_service_token}
+#' credentials mid-stream. You may can use `set_service_token`
 #' for non-interactive authentication.
 #'
 #' @section API console:
@@ -24,20 +24,31 @@ bq_env <- new.env(parent = emptyenv())
 #' @keywords internal
 #' @export
 #' @param value new access credentials, as returned by
-#'  \code{\link[httr]{oauth2.0_token}}
+#'  [httr::oauth2.0_token()]
 get_access_cred <- function() {
   cred <- bq_env$access_cred
   if (is.null(cred)) {
-    cred <- oauth2.0_token(google, bigqr,
-      scope = c(
-          "https://www.googleapis.com/auth/bigquery",
-          "https://www.googleapis.com/auth/cloud-platform"))
-
-    # Stop if unsuccessful
-    set_access_cred(cred)
+    set_oauth2.0_cred()
   }
 
-  cred
+  bq_env$access_cred
+}
+
+#' @rdname get_access_cred
+#' @param app A Google OAuth application created using
+#'  \code{\link[httr]{oauth_app}}
+#' @export
+set_oauth2.0_cred <- function(app = NULL) {
+  if (is.null(app)) {
+    app <- bigqr
+  }
+
+  cred <- oauth2.0_token(google, app,
+    scope = c(
+        "https://www.googleapis.com/auth/bigquery",
+        "https://www.googleapis.com/auth/cloud-platform"))
+
+  set_access_cred(cred)
 }
 
 #' @rdname get_access_cred

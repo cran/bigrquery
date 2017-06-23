@@ -1,28 +1,28 @@
 Package: bigrquery
 Title: An Interface to Google's 'BigQuery' 'API'
 Description: Easily talk to Google's 'BigQuery' database from R.
-Version: 0.3.0
+Version: 0.4.0
 Authors@R: c(
     person("Hadley", "Wickham", , "hadley@rstudio.com", c("aut", "cre")),
     person("RStudio", role = "cph")
     )
 Depends: R (>= 3.1.0)
-Imports: DBI, methods, httr, jsonlite, assertthat, R6 (>= 2.0.0), dplyr
-        (>= 0.5.0)
-Suggests: testthat, DBItest, withr
-License: GPL-3
+Imports: DBI, methods, httr, jsonlite, assertthat, readr, progress
+Suggests: testthat, DBItest, dplyr (>= 0.7.0), dbplyr, withr, hms
+License: GPL-3 | file LICENSE
 LazyData: true
-RoxygenNote: 5.0.1
-Collate: 'auth.r' 'bigrquery.r' 'datasets.r' 'upload.r' 'dbi-driver.r'
-        'dbi-connection.r' 'dbi-result.r' 'dplyr.r' 'id.R' 'jobs.r'
-        'projects.r' 'query.r' 'request.r' 'tabledata.r' 'tables.r'
-        'utils.r' 'zzz.r'
+RoxygenNote: 6.0.1
 URL: https://github.com/rstats-db/bigrquery
 BugReports: https://github.com/rstats-db/bigrquery/issues
-NeedsCompilation: no
-Packaged: 2016-06-27 19:01:03 UTC; hadley
+Collate: 'auth.r' 'bigrquery.r' 'camelCase.R' 'datasets.r'
+        'dbi-driver.r' 'dbi-connection.r' 'dbi-result.r'
+        'dplyr-compat.R' 'dplyr.r' 'id.R' 'job-extract.R' 'job-query.R'
+        'job-upload.r' 'jobs.r' 'projects.r' 'query.r' 'request.r'
+        'tabledata.r' 'tables.r' 'utils.r' 'zzz.r'
+NeedsCompilation: yes
+Packaged: 2017-06-23 15:00:20 UTC; hadley
 Author: Hadley Wickham [aut, cre],
   RStudio [cph]
 Maintainer: Hadley Wickham <hadley@rstudio.com>
 Repository: CRAN
-Date/Publication: 2016-06-28 07:51:56
+Date/Publication: 2017-06-23 15:08:06 UTC
