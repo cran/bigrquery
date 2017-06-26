@@ -1,7 +1,7 @@
-9ec49af50715b4de0256aaf115302148 *DESCRIPTION
+1ec1c93068be0e087fe0a14cff452405 *DESCRIPTION
 003e0464feca10f48ee455f39252fa07 *LICENSE
 2aa5735e05826fc11852aaa5622c33d0 *NAMESPACE
-6f235b5bcc449fb0dc116919eb0da5bb *NEWS.md
+9bd5b61c7b3332e6933dd60fe56cb0a1 *NEWS.md
 55428e83ce256ea2b91775ea87510824 *R/auth.r
 c5259f226deeb92b658391c226978b7f *R/bigrquery.r
 f68ada546a5a2fff1857fb7b127cd31c *R/camelCase.R
@@ -10,7 +10,7 @@ ea55f16138c570c72b8b2d9f4b9924c7 *R/datasets.r
 350070de1f139b163560c1dc8966d550 *R/dbi-driver.r
 58fab7e65ed0e96cc5b1f578a93550a7 *R/dbi-result.r
 f312e1cce352f3aa1db868ba05d8cff4 *R/dplyr-compat.R
-abc13f17abf3bc07ba2fd252ae268b73 *R/dplyr.r
+34f7bff6b05d1917e4d42a3950835c58 *R/dplyr.r
 2b3e458ff15b8da6925407cfdbcb3c7d *R/id.R
 f8045e7db019b49ea0ba64dfd18c3bf6 *R/job-extract.R
 856acafd5f3e215cd36f1534705a74c5 *R/job-query.R

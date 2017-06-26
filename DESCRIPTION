@@ -1,7 +1,7 @@
 Package: bigrquery
 Title: An Interface to Google's 'BigQuery' 'API'
 Description: Easily talk to Google's 'BigQuery' database from R.
-Version: 0.4.0
+Version: 0.4.1
 Authors@R: c(
     person("Hadley", "Wickham", , "hadley@rstudio.com", c("aut", "cre")),
     person("RStudio", role = "cph")
@@ -20,9 +20,9 @@ Collate: 'auth.r' 'bigrquery.r' 'camelCase.R' 'datasets.r'
         'job-upload.r' 'jobs.r' 'projects.r' 'query.r' 'request.r'
         'tabledata.r' 'tables.r' 'utils.r' 'zzz.r'
 NeedsCompilation: yes
-Packaged: 2017-06-23 15:00:20 UTC; hadley
+Packaged: 2017-06-26 21:58:50 UTC; hadley
 Author: Hadley Wickham [aut, cre],
   RStudio [cph]
 Maintainer: Hadley Wickham <hadley@rstudio.com>
 Repository: CRAN
-Date/Publication: 2017-06-23 15:08:06 UTC
+Date/Publication: 2017-06-26 22:16:13 UTC
