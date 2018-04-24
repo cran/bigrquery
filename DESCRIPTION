@@ -1,28 +1,41 @@
 Package: bigrquery
 Title: An Interface to Google's 'BigQuery' 'API'
-Description: Easily talk to Google's 'BigQuery' database from R.
-Version: 0.4.1
+Version: 1.0.0
 Authors@R: c(
     person("Hadley", "Wickham", , "hadley@rstudio.com", c("aut", "cre")),
+    person("Kungliga Tekniska Högskolan", role = "ctb", comment = "strptime implementation"),
+    person("The NetBSD Foundation, Inc.", role = "ctb", comment = "gmtime implementation"),
     person("RStudio", role = "cph")
     )
-Depends: R (>= 3.1.0)
-Imports: DBI, methods, httr, jsonlite, assertthat, readr, progress
-Suggests: testthat, DBItest, dplyr (>= 0.7.0), dbplyr, withr, hms
+Description: Easily talk to Google's 'BigQuery' database from R.
 License: GPL-3 | file LICENSE
-LazyData: true
-RoxygenNote: 6.0.1
 URL: https://github.com/rstats-db/bigrquery
 BugReports: https://github.com/rstats-db/bigrquery/issues
-Collate: 'auth.r' 'bigrquery.r' 'camelCase.R' 'datasets.r'
-        'dbi-driver.r' 'dbi-connection.r' 'dbi-result.r'
-        'dplyr-compat.R' 'dplyr.r' 'id.R' 'job-extract.R' 'job-query.R'
-        'job-upload.r' 'jobs.r' 'projects.r' 'query.r' 'request.r'
-        'tabledata.r' 'tables.r' 'utils.r' 'zzz.r'
+Encoding: UTF-8
+Depends: R (>= 3.1)
+Imports: assertthat, DBI, curl, glue, httr, jsonlite, methods,
+        prettyunits, progress, Rcpp, tibble
+Suggests: DBItest, dbplyr, dplyr (>= 0.7.0), hms, testthat, withr,
+        covr, readr, sodium
+LinkingTo: progress, rapidjsonr, Rcpp
+LazyData: true
+RoxygenNote: 6.0.1
+Collate: 'RcppExports.R' 'auth.R' 'bigrquery.R' 'bq-dataset.R'
+        'bq-download.R' 'bq-field.R' 'bq-job.R' 'bq-param.R'
+        'bq-parse.R' 'bq-perform.R' 'bq-project.R' 'bq-projects.R'
+        'bq-query.R' 'bq-refs.R' 'bq-request.R' 'bq-table.R'
+        'bq-test.R' 'camelCase.R' 'dbi-driver.R' 'dbi-connection.R'
+        'dbi-result.R' 'dplyr.R' 'gs-object.R' 'old-dataset.R'
+        'old-id.R' 'old-job-extract.R' 'old-job-query.R'
+        'old-job-upload.R' 'old-job.R' 'old-project.R' 'old-projects.R'
+        'old-query.R' 'old-table.R' 'old-tabledata.R' 'secret.R'
+        'utils.R' 'zzz.R'
 NeedsCompilation: yes
-Packaged: 2017-06-26 21:58:50 UTC; hadley
+Packaged: 2018-04-24 14:44:14 UTC; hadley
 Author: Hadley Wickham [aut, cre],
+  Kungliga Tekniska Högskolan [ctb] (strptime implementation),
+  The NetBSD Foundation, Inc. [ctb] (gmtime implementation),
   RStudio [cph]
 Maintainer: Hadley Wickham <hadley@rstudio.com>
 Repository: CRAN
-Date/Publication: 2017-06-26 22:16:13 UTC
+Date/Publication: 2018-04-24 17:41:28 UTC
