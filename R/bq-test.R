@@ -2,7 +2,7 @@
 #'
 #' @description
 #' You'll need to set up the `BIGQUERY_TEST_PROJECT` (name of a project) and
-#' `BIGQUERY_TEST_PROJECT` (name of bucket) env vars in order to run bigrquery
+#' `BIGQUERY_TEST_BUCKET` (name of bucket) env vars in order to run bigrquery
 #' tests locally. I recommend creating a new project because the tests involve
 #' both reading and writing in BigQuery and CloudStorage.
 #'
@@ -65,9 +65,9 @@ bq_test_init <- function(name = "basedata") {
 
 #' @export
 #' @rdname bq_test_project
-bq_test_dataset <- function(name = random_name()) {
+bq_test_dataset <- function(name = random_name(), location = "US") {
   ds <- bq_dataset(bq_test_project(), name)
-  bq_dataset_create(ds)
+  bq_dataset_create(ds, location = location)
 
   env <- new.env()
   reg.finalizer(

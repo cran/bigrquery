@@ -28,6 +28,20 @@ test_that("can retrieve zero rows", {
   expect_named(df, c("phase", "phase_emoji", "peak_datetime"))
 })
 
+
+# bq_table_info -----------------------------------------------------------
+
+test_that("max_results + start_index affects end values", {
+  out <- bq_download_page_info(
+    nrow = 100,
+    max_results = 5,
+    page_size = 2,
+    start_index = 5
+  )
+  expect_equal(out$begin, c(5, 7, 9))
+  expect_equal(out$end, c(7, 9, 10))
+})
+
 # types -------------------------------------------------------------------
 
 test_that("can read utf-8 strings", {
@@ -66,4 +80,25 @@ test_that("correctly parse logical values" ,{
   df <- bq_table_download(tb)
 
   expect_true(df$x)
+})
+
+test_that("the return type of integer columns is set by the bigint argument", {
+  x <- c("-2147483648", "-2147483647", "-1", "0", "1", "2147483647", "2147483648")
+  sql <- paste0("SELECT * FROM UNNEST ([", paste0(x, collapse = ","), "]) AS x");
+  qry <- bq_project_query(bq_test_project(), sql)
+
+  expect_warning(
+    out_int <- bq_table_download(qry, bigint = "integer")$x,
+    "integer overflow"
+  )
+  expect_identical(out_int, suppressWarnings(as.integer(x)))
+
+  out_int64 <- bq_table_download(qry, bigint = "integer64")$x
+  expect_identical(out_int64, bit64::as.integer64(x))
+
+  out_dbl <- bq_table_download(qry, bigint = "numeric")$x
+  expect_identical(out_dbl, as.double(x))
+
+  out_chr <- bq_table_download(qry, bigint = "character")$x
+  expect_identical(out_chr, x)
 })

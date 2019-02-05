@@ -110,3 +110,14 @@ test_that("can create bq_table from connection + name", {
   expect_equal(as_bq_table(con2, "x.y"), as_bq_table("p.x.y"))
   expect_equal(as_bq_table(con2, "x.y.z"), as_bq_table("x.y.z"))
 })
+
+test_that("the return type of integer columns is set by the bigint argument", {
+  x <- c("-2147483648", "-2147483647", "-1", "0", "1", "2147483647", "2147483648")
+  sql <- paste0("SELECT * FROM UNNEST ([", paste0(x, collapse = ","), "]) AS x");
+
+  con_integer64 <- DBI::dbConnect(bigquery(), project = bq_test_project(), bigint = "integer64")
+  con_character <- DBI::dbConnect(bigquery(), project = bq_test_project(), bigint = "character")
+
+  expect_equal(DBI::dbGetQuery(con_integer64, sql)$x, bit64::as.integer64(x))
+  expect_equal(DBI::dbGetQuery(con_character, sql)$x, x)
+})
