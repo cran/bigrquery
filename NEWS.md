@@ -1,3 +1,10 @@
+# bigrquery 1.1.1
+
+* Fix test failure with dbplyr 1.4.0.
+
+* `bq_field()` can now pass `description` parameter which will be applied
+  in `bq_table_create()` call (@byapparov, #272).
+
 # bigrquery 1.1.0
 
 ## Improved type support

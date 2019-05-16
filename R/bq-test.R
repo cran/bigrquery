@@ -6,7 +6,7 @@
 #' tests locally. I recommend creating a new project because the tests involve
 #' both reading and writing in BigQuery and CloudStorage.
 #'
-#' You will also need to have billing billing enabled for the project, and to
+#' You will also need to have billing enabled for the project, and to
 #' run `bq_test_init()` once.
 #'
 #' @section Testing:
@@ -15,7 +15,7 @@
 #'
 #' @return `bq_test_project()` returns the name of a project suitable for
 #'   use in testing. `bq_test_dataset()` creates a temporary dataset
-#'   who's lifetime is tied to the lifetime of the object that it returns.
+#'   whose lifetime is tied to the lifetime of the object that it returns.
 #' @export
 #' @keywords internal
 #' @examples
@@ -53,13 +53,14 @@ bq_test_project <- function() {
 bq_test_init <- function(name = "basedata") {
   proj <- bq_test_project()
 
-  basedata <- bq_dataset(proj, "basedata")
-  if (!bq_dataset_exists(basedata))
+  basedata <- bq_dataset(proj, name)
+  if (!bq_dataset_exists(basedata)) {
     bq_dataset_create(basedata)
+  }
 
   bq_mtcars <- bq_table(basedata, "mtcars")
   if (!bq_table_exists(bq_mtcars)) {
-    bq_table_upload(bq_mtcars, "mtcars", datasets::mtcars)
+    bq_table_upload(bq_mtcars, values = datasets::mtcars)
   }
 }
 
@@ -128,4 +129,3 @@ is_testing <- function() identical(Sys.getenv("TESTTHAT"), "true")
 skip_if_no_auth <- function() {
   testthat::skip_if_not(has_access_cred(), "Authentication not available")
 }
-

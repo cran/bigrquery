@@ -6,7 +6,13 @@ test_that("can create and delete tables", {
   bq_mtcars <- bq_table(ds, "mtcars")
   expect_false(bq_table_exists(bq_mtcars))
 
-  bq_table_create(bq_mtcars, mtcars)
+  bq_table_create(
+    bq_mtcars,
+    mtcars,
+    friendly_name = "Motor Trend Car Road Tests",
+    description = "The data was extracted from the 1974 Motor Trend US magazine",
+    labels = list(category = "test")
+  )
   expect_true(bq_table_exists(bq_mtcars))
 
   bq_table_delete(bq_mtcars)
@@ -133,4 +139,17 @@ test_that("can round trip data frame with list-cols", {
   df1 <- as.data.frame(df1)
   df2 <- as.data.frame(df2)
   expect_equal(df1, df2)
+})
+
+test_that("can create table field description", {
+  ds <- bq_test_dataset()
+  partition_table <- bq_table(ds, "table_field_description")
+
+  bq_table_create(
+    partition_table,
+    fields = bq_fields(list(bq_field("id", "integer", description = "Key field")))
+  )
+
+  meta <- bq_table_meta(partition_table)
+  expect_equal(meta$schema$fields[[1]]$description, "Key field")
 })
