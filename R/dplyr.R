@@ -83,11 +83,31 @@ db_analyze.BigQueryConnection <- function(con, table, ...) {
   TRUE
 }
 
+# registered onLoad
+db_copy_to.BigQueryConnection <- function(con, table, values,
+                            overwrite = FALSE, types = NULL, temporary = TRUE,
+                            unique_indexes = NULL, indexes = NULL,
+                            analyze = TRUE, ...) {
+
+  if (temporary) {
+    rlang::abort("BigQuery does not support temporary tables")
+  }
+
+  tb <- bq_table(con@project, con@dataset, table)
+  write <- if (overwrite) "WRITE_TRUNCATE" else "WRITE_EMPTY"
+  bq_table_upload(tb, values, fields = types, write_disposition = write)
+
+  table
+}
 
 # Efficient downloads -----------------------------------------------
 
 # registered onLoad
-collect.tbl_BigQueryConnection <- function(x, ..., n = Inf, warn_incomplete = TRUE) {
+collect.tbl_BigQueryConnection <- function(x, ...,
+                                           page_size = 1e4,
+                                           max_connections = 6L,
+                                           n = Inf,
+                                           warn_incomplete = TRUE) {
   assert_that(length(n) == 1, n > 0L)
 
   if (op_can_download(x$ops)) {
@@ -99,15 +119,20 @@ collect.tbl_BigQueryConnection <- function(x, ..., n = Inf, warn_incomplete = TR
 
     billing <- x$src$con@billing
     if (is.null(x$src$con@dataset)) {
-      tb <- bq_project_query(billing, sql, quiet = x$src$con@quiet)
+      tb <- bq_project_query(billing, sql, quiet = x$src$con@quiet, ...)
     } else {
       ds <- as_bq_dataset(x$src$con)
-      tb <- bq_dataset_query(ds, sql, quiet = x$src$con@quiet, billing = billing)
+      tb <- bq_dataset_query(ds, sql, quiet = x$src$con@quiet, billing = billing, ...)
     }
   }
 
   quiet <- if (n < 100) TRUE else x$src$con@quiet
-  out <- bq_table_download(tb, max_results = n, quiet = quiet)
+  out <- bq_table_download(tb,
+    max_results = n,
+    page_size = page_size,
+    quiet = quiet,
+    max_connections = max_connections
+  )
   dplyr::grouped_df(out, intersect(dbplyr::op_grps(x), names(out)))
 }
 
@@ -174,7 +199,7 @@ sql_translate_env.BigQueryConnection <- function(x) {
       paste0 = sql_prefix("CONCAT"),
 
       # stringr equivalents
-      str_detect =  sql_prefix("REGEXP_MATCH", 2),
+      str_detect =  sql_prefix("REGEXP_CONTAINS", 2),
       str_extract = sql_prefix("REGEXP_EXTRACT", 2),
       str_replace = sql_prefix("REGEXP_REPLACE", 3),
 

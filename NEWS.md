@@ -1,3 +1,34 @@
+# bigrquery 1.3.0
+
+* Old functions (not starting with `bq_`) are deprecated (@byapparov, #335)
+
+* When `bq_perform_*()` fails, you now see all errors, not just the first (#355).
+
+* `bq_perform_query()` can now execute parameterised query with parameters 
+  of `ARRAY` type (@byapparov, #303). Vectors of length > 1 will be
+  automatically converted to `ARRAY` type, or use `bq_param_array()` to
+  be explicit.
+
+* `bq_perform_upload()` works once again (#361). It seems like the generated
+  JSON was always incorrect, but Google's type checking only recently become
+  strict enough to detect the problem.
+
+* `dbExecute()` is better supported. It no longer fails with a spurious
+  error for DDL queries, and it returns the number of affected rows for
+  DML queries (#375).
+
+* `dbSendQuery()` (and hence `dbGetQuery()`) and `collect()` passes on `...` 
+  to `bq_perform_query()`. `collect()` gains `page_size` and `max_connection` 
+  arguments that are passed on to `bq_table_download()` (#374).
+
+* `copy_to()` now works with BigQuery (although it doesn't support temporary
+  tables so application is somewhat limited) (#337).
+  
+* `str_detect()` now correctly translated to `REGEXP_CONTAINS`  
+  (@jimmyg3g, #369).
+
+* Error messages inlude hints for common problems (@deflaux, #353).
+
 # bigrquery 1.2.0
 
 ## Auth from gargle
@@ -16,6 +47,8 @@ Where to learn more:
     - [How to get your own API credentials](https://gargle.r-lib.org/articles/get-api-credentials.html) 
 
 ### Changes that a user will notice
+
+Temporary files are now deleted after table download. (@meztez, #343)
 
 OAuth2 tokens are now cached at the user level, by default, instead of in `.httr-oauth` in the current project. The default OAuth app has also changed. This means you will need to re-authorize bigrquery (i.e. get a new token). You may want to delete any vestigial `.httr-oauth` files lying around your bigrquery projects.
 
