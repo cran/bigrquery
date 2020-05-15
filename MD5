@@ -1,6 +1,6 @@
-4c8f0b81d4bc64f1c67f178d52716119 *DESCRIPTION
+5b9f95f1116e0c21ee595b685fd03c5e *DESCRIPTION
 843f5b55a2d8293e6e8c507d2918386b *NAMESPACE
-a02b0db01b74312d7203a538b2bda9e9 *NEWS.md
+ca4ae7566678384732467824911cd9b5 *NEWS.md
 1b7382568cf3820a822ebe7d43a6698c *R/RcppExports.R
 26a9ddc2edbe5ca00cc285327bdc305b *R/bigrquery.R
 f59a2e047f77556de6ca6d54fd2d9bd3 *R/bq-auth.R
@@ -22,7 +22,7 @@ f68ada546a5a2fff1857fb7b127cd31c *R/camelCase.R
 d505722b760594c59348e2f9f8f38853 *R/dbi-connection.R
 90a5a3d0b49a29123af23088178088c6 *R/dbi-driver.R
 9b83be191e55960c422a7617a1627993 *R/dbi-result.R
-20bb064950791ee2ecf4e945cc31c8a4 *R/dplyr.R
+21b23106cd75018ce7479dbb93f5b103 *R/dplyr.R
 2e938df10c5e99553f19588a60babb04 *R/gs-object.R
 e0272f1964f2d8974f3a3b29ede09f76 *R/old-auth.R
 67bf7494fbf8ea8c766a4320724bf5d3 *R/old-dataset.R
@@ -117,7 +117,7 @@ d98b18dfe75fa72978d53da14f62da29 *tests/testthat/test-bq-test.R
 f798eca8b459c82f3376694cffdd37f6 *tests/testthat/test-dbi-connection.R
 1561aaa1205f987f219e41a1e8d8370e *tests/testthat/test-dbi-driver.R
 1053ce7e350eb210811fd6a9606ecabb *tests/testthat/test-dbi-result.R
-118f855a99fbcbd40dc08f82afff5bee *tests/testthat/test-dplyr.R
+ad85360b251fc1873c7538948e9c278c *tests/testthat/test-dplyr.R
 65de8e6eef0af65369a2962001ae3b00 *tests/testthat/test-gs-object.R
 1556c388c78e0649fc7181dc77f1272b *tests/testthat/test-request.r
 e1697a013da6396a86dc5fd2565ede2d *tests/testthat/test-test.R
