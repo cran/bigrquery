@@ -34,7 +34,7 @@ if \code{NA} displays progress bar only for long-running jobs.}
 
 \item{bigint}{The R type that BigQuery's 64-bit integer types should be mapped to.
 The default is \code{"integer"} which returns R's \code{integer} type but results in \code{NA} for
-values above/below +/- 2147483647. \code{"integer64"} returns a \link[bit64:integer64]{bit64::integer64},
+values above/below +/- 2147483647. \code{"integer64"} returns a \link[bit64:bit64-package]{bit64::integer64},
 which allows the full range of 64 bit integers.}
 }
 \value{
@@ -78,7 +78,7 @@ nested/repeated values, are not well supported in R.
 \section{API documentation}{
 
 \itemize{
-\item \href{https://developers.google.com/bigquery/docs/reference/v2/tabledata/list}{list}
+\item \href{https://cloud.google.com/bigquery/docs/reference/rest/v2/tabledata/list}{list}
 }
 }
 

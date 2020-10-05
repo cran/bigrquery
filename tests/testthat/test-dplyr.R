@@ -1,5 +1,3 @@
-context("dplyr.R")
-
 test_that("historical API continues to work", {
   src <- src_bigquery(bq_test_project(), "basedata")
   x <- dplyr::tbl(src, "mtcars")
@@ -138,4 +136,10 @@ test_that("%||% translates to IFNULL", {
     dbplyr::sql_build(simulate_bigrquery())
 
   expect_equal(sql$select[[2]], 'IFNULL(`x`, 2)')
+})
+
+test_that("suffixes use _", {
+  skip_if_not_installed("dbplyr", "1.99")
+
+  expect_equal(dbplyr::sql_join_suffix(simulate_bigrquery()), c("_x", "_y"))
 })

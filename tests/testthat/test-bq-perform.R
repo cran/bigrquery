@@ -1,5 +1,3 @@
-context("test-bq-perform.R")
-
 test_that("bq_perform_upload creates job that succeeds", {
   ds <- bq_test_dataset()
   bq_mtcars <- bq_table(ds, "mtcars")
@@ -89,4 +87,12 @@ test_that("can supply array parameters", {
   )
   df <- bq_table_download(job)
   expect_setequal(df$values, c("a", "b"))
+})
+
+test_that("can estimate cost", {
+  cost <- bq_perform_query_dry_run(
+    "SELECT count(*) FROM bigquery-public-data.moon_phases.moon_phases",
+    billing = bq_test_project()
+  )
+  expect_equal(cost, structure(0, class = "bq_bytes"))
 })
