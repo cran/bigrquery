@@ -1,3 +1,22 @@
+# bigrquery 1.4.0
+
+* `bq_table_download()` has been heavily refactored (#412):
+
+  - It should now return the requested results, in full, in most situations.
+    However, when there is a "row shortage", it throws an error instead of
+    silently returning incomplete results.
+  - The `max_results` argument has been deprecated in favor of `n_max`, which
+    reflects what we actually do with this number and is consistent with the
+    `n_max` argument elsewhere, e.g., `readr::read_csv()`.
+  - The default value of `page_size` is no longer fixed and, instead, is
+    determined empirically. Users are strongly recommended to let bigrquery
+    select `page_size` automatically, unless there's a specific reason to do
+    otherwise.
+
+* The `BigQueryResult` object gains a `billing` slot (@meztez, #423).
+
+* `collect.tbl_BigQueryConnection()` honours the `bigint` field found in a connection object created with `DBI::dbConnect()` and passes `bigint` along to `bq_table_download()`. This improves support for 64-bit integers when reading BigQuery tables with dplyr syntax (@zoews, #439, #437).
+
 # bigrquery 1.3.2
 
 * BigQuery `BYTES` and `GEOGRAPHY` column types are now supported via
@@ -50,7 +69,7 @@
 * `str_detect()` now correctly translated to `REGEXP_CONTAINS`  
   (@jimmyg3g, #369).
 
-* Error messages inlude hints for common problems (@deflaux, #353).
+* Error messages include hints for common problems (@deflaux, #353).
 
 # bigrquery 1.2.0
 
@@ -111,7 +130,7 @@ gargle and rlang are newly Imported.
 * `bq_table_download()` now treats NUMERIC columns the same was as FLOAT 
   columns (@paulsendavidjay, #282).
 
-* `bq_table_upload()` works with POSIXct/POSIXct varibles (#251)
+* `bq_table_upload()` works with POSIXct/POSIXct variables (#251)
 
 ## SQL translation
 
@@ -320,7 +339,7 @@ The low-level API has been completely overhauled to make it easier to use. The p
   
 # Version 0.2.0.
 
-* Compatiable with latest httr.
+* Compatible with latest httr.
 
 * Computation of the SQL data type that corresponds to a given R object 
   is now more robust against unknown classes. (#95, @krlmlr)

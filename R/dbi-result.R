@@ -43,7 +43,8 @@ BigQueryResult <- function(conn, sql, ...) {
     page_size = conn@page_size,
     quiet = conn@quiet,
     cursor = cursor(nrow),
-    bigint = conn@bigint
+    bigint = conn@bigint,
+    billing = conn@billing
   )
   res
 }
@@ -61,7 +62,8 @@ setClass(
     page_size = "numeric",
     quiet = "logical",
     cursor = "list",
-    bigint = "character"
+    bigint = "character",
+    billing = "character"
   )
 )
 
@@ -111,7 +113,7 @@ setMethod(
     }
 
     data <- bq_table_download(res@bq_table,
-      max_results = n,
+      n_max = n,
       start_index = res@cursor$cur(),
       page_size = res@page_size,
       bigint = res@bigint
