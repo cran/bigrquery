@@ -1,6 +1,9 @@
 test_that("historical API continues to work", {
+  rlang::reset_warning_verbosity("BigQueryConnection-edition")
   src <- src_bigquery(bq_test_project(), "basedata")
-  x <- dplyr::tbl(src, "mtcars")
+
+  # old dbplyr interface warning
+  expect_warning(x <- dplyr::tbl(src, "mtcars"))
 
   expect_s3_class(x, "tbl")
   expect_true("cyl" %in% dbplyr::op_vars(x))
@@ -27,25 +30,6 @@ test_that("can copy_to", {
   bq_mtcars <- dplyr::copy_to(con, mtcars, temporary = FALSE)
 
   expect_s3_class(bq_mtcars, "tbl_BigQueryConnection")
-})
-
-test_that("can collect and compute (no dataset)", {
-  con <- DBI::dbConnect(bigquery(), project = bq_test_project())
-  bq_mtcars <- dplyr::tbl(con, "basedata.mtcars") %>% dplyr::filter(cyl == 4)
-
-  # collect
-  x <- dplyr::collect(bq_mtcars)
-  expect_equal(dim(x), c(11, 11))
-
-  # compute: temporary
-  temp <- dplyr::compute(bq_mtcars)
-
-  # compute: persistent
-  name <- paste0("basedata.", random_name())
-  temp <- dplyr::compute(bq_mtcars, temporary = FALSE, name = name)
-  on.exit(DBI::dbRemoveTable(con, name))
-
-  expect_true(DBI::dbExistsTable(con, name))
 })
 
 test_that("can collect and compute (no dataset)", {
@@ -97,21 +81,21 @@ test_that("collect can identify directly download tables", {
   )
 
   bq1 <- dplyr::tbl(con, "mtcars")
-  expect_true(op_can_download(bq1$ops))
-  expect_equal(op_rows(bq1$ops), Inf)
-  expect_equal(as.character(op_table(bq1$ops)), "mtcars")
+  expect_true(op_can_download(bq1))
+  expect_equal(op_rows(bq1), Inf)
+  expect_equal(as.character(op_table(bq1)), "mtcars")
 
   bq2 <- head(bq1, 4)
-  expect_true(op_can_download(bq2$ops))
-  expect_equal(op_rows(bq2$ops), 4)
-  expect_equal(as.character(op_table(bq1$ops)), "mtcars")
+  expect_true(op_can_download(bq2))
+  expect_equal(op_rows(bq2), 4)
+  expect_equal(as.character(op_table(bq1)), "mtcars")
 
   bq3 <- head(bq2, 2)
-  expect_true(op_can_download(bq3$ops))
-  expect_equal(op_rows(bq3$ops), 2)
+  expect_true(op_can_download(bq3))
+  expect_equal(op_rows(bq3), 2)
 
   bq3 <- dplyr::filter(bq1, cyl == 1)
-  expect_false(op_can_download(bq3$ops))
+  expect_false(op_can_download(bq3))
 
   x <- dplyr::collect(bq1)
   expect_s3_class(x, "tbl")

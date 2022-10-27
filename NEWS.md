@@ -1,3 +1,12 @@
+# bigrquery 1.4.1
+
+* Fix for `R CMD check` in R-devel (#511)
+
+* bigrquery is now compatible with dbplyr 2.2.0 (@mgirlich, #495).
+
+* brio is new in Imports, replacing the use of the Suggested package readr, 
+  in `bq_table_download()` (@AdeelK93, #462).
+
 # bigrquery 1.4.0
 
 * `bq_table_download()` has been heavily refactored (#412):
