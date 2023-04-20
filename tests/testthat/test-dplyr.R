@@ -1,5 +1,5 @@
 test_that("historical API continues to work", {
-  rlang::reset_warning_verbosity("BigQueryConnection-edition")
+  reset_warning_verbosity("BigQueryConnection-edition")
   src <- src_bigquery(bq_test_project(), "basedata")
 
   # old dbplyr interface warning
@@ -126,4 +126,21 @@ test_that("suffixes use _", {
   skip_if_not_installed("dbplyr", "1.99")
 
   expect_equal(dbplyr::sql_join_suffix(simulate_bigrquery()), c("_x", "_y"))
+})
+
+test_that("can correctly print a lazy query", {
+  con <- DBI::dbConnect(
+    bigquery(),
+    project = bq_test_project(),
+    dataset = "basedata"
+  )
+
+  bq_mtcars <- dplyr::tbl(con, "mtcars")
+
+  # not a snapshot test because column order can vary
+  expect_no_error(
+    expect_output(
+      print(bq_mtcars)
+    )
+  )
 })
