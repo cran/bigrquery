@@ -13,19 +13,16 @@
 #' @aliases bigrquery-package
 #' @useDynLib bigrquery, .registration = TRUE
 #' @rawNamespace import(rlang, except = unbox)
-#' @rawNamespace import(assertthat, except = has_name)
 "_PACKAGE"
+
+the <- new_environment()
 
 # We import rlang this way because jsonlite's unbox() is used extensively.
 
 ## usethis namespace: start
 #' @importFrom bit64 integer64
-#' @importFrom glue glue
-#' @importFrom glue glue_collapse
-#' @importFrom glue glue_data
 #' @importFrom jsonlite unbox
 #' @importFrom lifecycle deprecated
-#' @importFrom Rcpp sourceCpp
 #' @importFrom tibble tibble
 ## usethis namespace: end
 NULL

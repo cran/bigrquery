@@ -1,5 +1,5 @@
-base_url <- "https://www.googleapis.com/bigquery/v2/"
-upload_url <- "https://www.googleapis.com/upload/bigquery/v2/"
+base_url <- "https://bigquery.googleapis.com/bigquery/v2/"
+upload_url <- "https://bigquery.googleapis.com/upload/bigquery/v2/"
 
 prepare_bq_query <- function(query) {
   api_key <- Sys.getenv("BIGRQUERY_API_KEY")
@@ -12,9 +12,9 @@ prepare_bq_query <- function(query) {
 }
 
 bq_path <- function(project, dataset = NULL, table = NULL, ...) {
-  assert_that(is.null(project) || is.string(project))
-  assert_that(is.null(table) || is.string(table))
-  assert_that(is.null(dataset) || is.string(dataset))
+  check_string(project, allow_null = TRUE)
+  check_string(dataset, allow_null = TRUE)
+  check_string(table, allow_null = TRUE)
 
   components <- c(
     projects = project,
@@ -69,8 +69,8 @@ bq_exists <- function(url, ..., query = NULL, token = bq_token()) {
 bq_get_paginated <- function(url, ..., query = NULL, token = bq_token(),
                              page_size = 50, max_pages = Inf, warn = TRUE) {
 
-  assert_that(is.numeric(max_pages), length(max_pages) == 1)
-  assert_that(is.numeric(page_size), length(page_size) == 1)
+  check_number_whole(max_pages, min = 1, allow_infinite = TRUE)
+  check_number_whole(page_size, min = 1)
 
   if (!is.null(query$fields))
     query$fields <- paste0(query$fields, ",nextPageToken")
@@ -163,7 +163,7 @@ bq_upload <- function(url, parts, ..., query = list(), token = bq_token()) {
 
 
 #' @importFrom httr http_status content parse_media status_code
-process_request <- function(req, raw = FALSE) {
+process_request <- function(req, raw = FALSE, call = caller_env()) {
   status <- status_code(req)
   # No content -> success
   if (status == 204) return(TRUE)
@@ -171,7 +171,12 @@ process_request <- function(req, raw = FALSE) {
   type <- req$headers$`Content-type`
   content <- content(req, "raw")
 
-  bq_check_response(status, type, content)
+  bq_check_response(
+    status = status,
+    type = type,
+    content = content,
+    call = call
+  )
 
   if (raw) {
     content
@@ -180,25 +185,37 @@ process_request <- function(req, raw = FALSE) {
   }
 }
 
-bq_check_response <- function(status, type, content) {
+bq_check_response <- function(status, type, content, call = caller_env()) {
   if (status >= 200 && status < 300) {
     return()
   }
 
   type <- httr::parse_media(type)
+  text <- rawToChar(content)
+
   if (type$complete == "application/json") {
-    json <- jsonlite::fromJSON(rawToChar(content), simplifyVector = FALSE)
-    signal_reason(json$error$errors[[1L]]$reason, json$error$message)
+    json <- jsonlite::fromJSON(text, simplifyVector = FALSE)
+    gargle_abort(
+      reason = json$error$errors[[1L]]$reason,
+      message = json$error$message,
+      status = status,
+      call = call
+    )
   } else {
-    text <- rawToChar(content)
-    stop("HTTP error [", status, "] ", text, call. = FALSE)
+    message <- paste0("HTTP error [", status, "]\n", text)
+    gargle_abort(
+      reason = NULL,
+      message = message,
+      status = status,
+      call = call
+    )
   }
 }
 
-signal_reason <- function(reason, message) {
-  if (is.null(reason)) {
-    abort(message)
-  } else {
+gargle_abort <- function(reason, message, status, call = caller_env()) {
+  class <- paste0("bigrquery_http_", status)
+
+  if (!is.null(reason)) {
     advice <- NULL
     if (reason == "responseTooLarge") {
       # If message mentions "allowLargeResults", that's the right advice to
@@ -219,9 +236,10 @@ signal_reason <- function(reason, message) {
       paste0(message, " [", reason, "] "),
       i = advice
     )
-
-    abort(message, class = paste0("bigrquery_", reason))
+    class <- c(paste0("bigrquery_", reason), class)
   }
+
+  cli::cli_abort(message, class = class, call = call)
 }
 
 # Multipart/related ------------------------------------------------------------

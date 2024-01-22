@@ -54,10 +54,8 @@
 #' @section Google BigQuery API documentation:
 #' * [list](https://cloud.google.com/bigquery/docs/reference/rest/v2/tabledata/list)
 #' @export
-#' @examples
-#' if (bq_testable()) {
-#'   df <- bq_table_download("publicdata.samples.natality", n_max = 35000)
-#' }
+#' @examplesIf bq_testable()
+#' df <- bq_table_download("publicdata.samples.natality", n_max = 35000)
 bq_table_download <-
   function(x,
            n_max = Inf,
@@ -68,7 +66,11 @@ bq_table_download <-
            bigint = c("integer", "integer64", "numeric", "character"),
            max_results = deprecated()) {
     x <- as_bq_table(x)
-    bigint <- match.arg(bigint)
+    check_number_whole(n_max, min = 0, allow_infinite = TRUE)
+    check_number_whole(start_index, min = 0)
+    check_number_whole(max_connections, min = 1)
+    quiet <- check_quiet(quiet)
+    bigint <- arg_match(bigint)
     if (lifecycle::is_present(max_results)) {
       lifecycle::deprecate_warn(
         "1.4.0", "bq_table_download(max_results)", "bq_table_download(n_max)"
@@ -85,14 +87,14 @@ bq_table_download <-
     start_index <- params$start_index
 
     schema_path <- bq_download_schema(x, tempfile())
-    withr::defer(file.remove(schema_path))
+    defer(unlink(schema_path))
 
     if (n_max == 0) {
       table_data <- bq_parse_files(
         schema_path,
         file_paths = character(),
         n = 0,
-        quiet = bq_quiet(quiet)
+        quiet = quiet
       )
       return(table_data)
     }
@@ -100,20 +102,12 @@ bq_table_download <-
     pool <- curl::new_pool()
 
     # get first chunk ----
-    if (!bq_quiet(quiet)) {
-      message("Downloading first chunk of data.")
+    if (!quiet) {
+      cli::cli_inform("Downloading first chunk of data.")
     }
 
-    if (is.null(page_size)) {
-      chunk_size_from_user <- FALSE
-    } else {
-      assert_that(
-        is.numeric(page_size),
-        length(page_size) == 1,
-        page_size > 0
-      )
-      chunk_size_from_user <- TRUE
-    }
+    check_number_whole(page_size, min = 0, allow_null = TRUE)
+    chunk_size_from_user <- !is.null(page_size)
     chunk_size <- page_size
 
     chunk_plan <- bq_download_plan(
@@ -134,31 +128,30 @@ bq_table_download <-
     )
     curl::multi_run(pool = pool)
     path_first_chunk <- chunk_plan$dat$path[1]
-    withr::defer(file.remove(path_first_chunk))
+    defer(unlink(path_first_chunk))
 
     chunk_data <- bq_parse_file(schema_path, path_first_chunk)
     n_got <- nrow(chunk_data)
 
     if (n_got >= n_max) {
-      if (!bq_quiet(quiet)) {
-        message("First chunk includes all requested rows.")
+      if (!quiet) {
+        cli::cli_inform("First chunk includes all requested rows.")
       }
-      return(convert_bigint(chunk_data, bigint))
+      return(parse_postprocess(chunk_data, bigint = bigint))
     }
 
     if (chunk_size_from_user && n_got < chunk_size) {
-      abort(c(
+      cli::cli_abort(c(
         "First chunk is incomplete:",
-        x = glue("{big_mark(chunk_size)} rows were requested, but only \\
-                  {big_mark(n_got)} rows were received."),
+        x = "{big_mark(chunk_size)} rows were requested, but only {big_mark(n_got)} rows were received.",
         i = "Leave `page_size` unspecified or use an even smaller value."
       ))
     }
 
     # break rest of work into natural chunks ----
     if (!chunk_size_from_user) {
-      if (!bq_quiet(quiet)) {
-        message(glue("Received {big_mark(n_got)} rows in the first chunk."))
+      if (!quiet) {
+        cli::cli_inform("Received {big_mark(n_got)} rows in the first chunk.")
       }
       chunk_size <- trunc(0.75 * n_got)
     }
@@ -171,18 +164,18 @@ bq_table_download <-
       chunk_size = chunk_size,
       start_index = start_index_new
     )
-    progress <- bq_progress(
-      "Downloading data [:bar] :percent ETA: :eta",
-      total = chunk_plan$n_chunks,
-      quiet = quiet
-    )
 
-    if (!bq_quiet(quiet)) {
-      message(glue_data(
-        chunk_plan,
-        "Downloading the remaining {big_mark(n_max)} rows in {n_chunks} \\
-         chunks of (up to) {big_mark(chunk_size)} rows."
-      ))
+    if (!quiet) {
+      cli::cli_inform(
+        "Downloading the remaining {big_mark(chunk_plan$n_max)} rows in {chunk_plan$n_chunks} \\
+         chunks of (up to) {big_mark(chunk_plan$chunk_size)} rows."
+      )
+      progress <- cli::cli_progress_bar(
+        format = "Downloading data {cli::pb_bar} {cli::pb_percent} ETA {cli::pb_eta}",
+        total = chunk_plan$n_chunks
+      )
+    } else {
+      progress <- NULL
     }
 
     for (i in seq_len(chunk_plan$n_chunks)) {
@@ -198,47 +191,87 @@ bq_table_download <-
       )
     }
     curl::multi_run(pool = pool)
-    withr::defer(file.remove(chunk_plan$dat$path))
+    defer(unlink(chunk_plan$dat$path))
 
     table_data <- bq_parse_files(
       schema_path,
       c(path_first_chunk, chunk_plan$dat$path),
       n = n_max,
-      quiet = bq_quiet(quiet)
+      quiet = quiet
     )
-    convert_bigint(table_data, bigint)
+    parse_postprocess(table_data, bigint = bigint)
   }
 
 # This function is a modified version of
 # https://github.com/r-dbi/RPostgres/blob/master/R/PqResult.R
-convert_bigint <- function(df, bigint) {
-  if (bigint == "integer64") {
-    return(df)
-  }
+parse_postprocess <- function(df, bigint) {
 
-  as_bigint <- switch(bigint,
-                      integer = as.integer,
-                      numeric = as.numeric,
-                      character = as.character
+  df <- col_apply(
+    df,
+    function(x) identical(attr(x, "bq_type"), "DATE"),
+    function(x) clock::date_parse(x)
+  )
+  df <- col_apply(
+    df,
+    function(x) identical(attr(x, "bq_type"), "DATETIME"),
+    function(x) bq_datetime_parse(x)
+  )
+  df <- col_apply(
+    df,
+    function(x) identical(attr(x, "bq_type"), "TIME"),
+    function(x) hms::parse_hms(x)
   )
 
-  rapply_int64(df, f = as_bigint)
+  if (bigint != "integer64") {
+    as_bigint <- switch(
+      bigint,
+      integer = as.integer,
+      numeric = as.numeric,
+      character = as.character
+    )
+    df <- col_apply(df, bit64::is.integer64, as_bigint)
+  }
+
+  df
 }
 
-rapply_int64 <- function(x, f) {
+col_apply <- function(x, p, f) {
   if (is.list(x)) {
-    x[] <- lapply(x, rapply_int64, f = f)
+    x[] <- lapply(x, col_apply, p = p, f = f)
     x
-  } else if (bit64::is.integer64(x)) {
+  } else if (p(x)) {
     f(x)
   } else {
     x
   }
 }
 
+bq_datetime_parse <- function(x) {
+  # `format` matches clock already.
+  # Bigquery DATETIME is documented as microsecond precision.
+  # https://cloud.google.com/bigquery/docs/reference/standard-sql/data-types#datetime_type
+  x <- clock::year_month_day_parse(x, precision = "microsecond")
+
+  # Manually retain microseconds for the POSIXct
+  microseconds <- clock::get_microsecond(x)
+  microseconds <- microseconds / 1000000
+
+  # Convert to POSIXct at second precision since that is what clock asserts
+  # the precision of a POSIXct is. Can use sys-time since we are going straight
+  # to UTC.
+  x <- clock::calendar_narrow(x, "second")
+  x <- clock::as_sys_time(x)
+  x <- as.POSIXct(x, tz = "UTC")
+
+  # Manually add microseconds back on (lossy, floating point issues!)
+  x <- x + microseconds
+
+  x
+}
+
 set_row_params <- function(nrow, n_max = Inf, start_index = 0L) {
-  assert_that(is.numeric(n_max), length(n_max) == 1, n_max >= 0)
-  assert_that(is.numeric(start_index), length(start_index) == 1, start_index >= 0)
+  check_number_whole(n_max, min = 0, allow_infinite = TRUE)
+  check_number_whole(start_index, min = 0)
 
   n_max <- max(min(n_max, nrow - start_index), 0)
 
@@ -288,8 +321,8 @@ set_chunk_plan <- function(n_max, chunk_size, n_chunks, start_index = 0) {
 
 bq_download_chunk_handle <- function(x, begin = 0L, max_results = 1e4) {
   x <- as_bq_table(x)
-  assert_that(is.numeric(begin), length(begin) == 1)
-  assert_that(is.numeric(max_results), length(max_results) == 1)
+  check_number_whole(begin, min = 0)
+  check_number_whole(max_results, min = 1, allow_infinite = TRUE)
 
   # Pre-format query params with forced non-scientific notation, since the BQ
   # API doesn't accept numbers like 1e5. See issue #395 for details.
@@ -317,19 +350,22 @@ bq_download_chunk_handle <- function(x, begin = 0L, max_results = 1e4) {
   h
 }
 
-bq_download_callback <- function(path, progress = NULL) {
+bq_download_callback <- function(path, progress = NULL, call = caller_env()) {
   force(path)
+  force(progress)
+
   function(result) {
-    if (!is.null(progress)) progress$tick()
+    if (!is.null(progress)) cli::cli_progress_update(id = progress)
 
     bq_check_response(
-      result$status_code,
-      curl::parse_headers_list(result$headers)[["content-type"]],
-      result$content
+      status = result$status_code,
+      type = curl::parse_headers_list(result$headers)[["content-type"]],
+      content = result$content,
+      call = call
     )
 
     con <- file(path, open = "wb")
-    withr::defer(close(con))
+    defer(close(con))
     writeBin(result$content, con)
   }
 }

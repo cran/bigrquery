@@ -46,6 +46,8 @@ gargle_lookup_table <- list(
 #' ## use a service account token
 #' bq_auth(path = "foofy-83ee9e7c9c48.json")
 #' }
+#'
+#' @importFrom gargle token_fetch
 bq_auth <- function(email = gargle::gargle_oauth_email(),
                     path = NULL,
                     scopes = c(
@@ -73,9 +75,9 @@ bq_auth <- function(email = gargle::gargle_oauth_email(),
   # By forcing here, we expose this mistake early and noisily.
   force(token)
 
-  cred <- gargle::token_fetch(
+  cred <- token_fetch(
     scopes = scopes,
-    app = bq_oauth_client() %||% gargle::tidyverse_client(),
+    client = bq_oauth_client() %||% gargle::tidyverse_client(),
     email = email,
     path = path,
     package = "bigrquery",
@@ -84,17 +86,26 @@ bq_auth <- function(email = gargle::gargle_oauth_email(),
     token = token
   )
   if (!inherits(cred, "Token2.0")) {
-    stop(
-      "Can't get Google credentials.\n",
-      "Are you running bigrquery in a non-interactive session? Consider:\n",
-      "  * Call `bq_auth()` directly with all necessary specifics.\n",
-      call. = FALSE
-    )
+    cli::cli_abort(c(
+      "Can't get Google credentials.",
+      i = if (!is_interactive())
+        "Try calling {.fun bq_auth} directly with necessary specifics."
+    ))
   }
   .auth$set_cred(cred)
   .auth$set_auth_active(TRUE)
 
   invisible()
+}
+
+has_internal_auth <- function() {
+  gargle::secret_has_key("BIGRQUERY_KEY")
+}
+
+bq_auth_internal <- function() {
+  path <- system.file("secret", "bigrquery-testing.json", package = "bigrquery")
+  json <- gargle::secret_decrypt_json(path, "BIGRQUERY_KEY")
+  bq_auth(path = json)
 }
 
 #' Clear current token
@@ -182,27 +193,27 @@ bq_auth_configure <- function(client, path, app = deprecated()) {
       "bq_auth_configure(app)",
       "bq_auth_configure(client)"
     )
-    bq_auth_configure(client = app, path = path)
+    return(bq_auth_configure(client = app, path = path))
   }
 
-  if (!xor(missing(client), missing(path))) {
-    stop("Must supply exactly one of `client` and `path`", call. = FALSE)
-  }
+  check_exclusive(client, path)
   if (!missing(path)) {
-    stopifnot(is_string(path))
+    check_string(path)
     client <- gargle::gargle_oauth_client_from_json(path)
+  } else {
+    if (!is.null(client) && !inherits(client, "gargle_oauth_client")) {
+      stop_input_type(client, "a gargle OAuth client", allow_null = TRUE)
+    }
   }
-  stopifnot(is.null(client) || inherits(client, "gargle_oauth_client"))
 
-  .auth$set_app(client)
-
+  .auth$set_client(client)
   invisible(.auth)
 }
 
 #' @export
 #' @rdname bq_auth_configure
 bq_oauth_client <- function() {
-  .auth$app
+  .auth$client
 }
 
 #' Get info on current user

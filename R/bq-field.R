@@ -3,12 +3,22 @@
 #' `bq_field()` and `bq_fields()` create; `as_bq_field()` and `as_bq_fields()`
 #' coerce from lists.
 #'
-#' @param name Field name
-#' @param type Field type
-#' @param mode Field mode
+#' @param name The field name. The name must contain only letters (a-z, A-Z),
+#'   numbers (0-9), or underscores (_), and must start with a letter or
+#'   underscore. The maximum length is 300 characters.
+#' @param type The field data type. Possible values include:
+#'   `"STRING"`, `"BYTES"`, `"INTEGER"`, `"FLOAT"`, `"BOOLEAN"`, `"TIMESTAMP"`,
+#'   `"DATE"`, `"TIME"`, `"DATETIME"`, `"GEOGRAPHY"`, `"NUMERIC"`,
+#'   `"BIGNUMERIC"`, `"JSON"`, `"RECORD"`.
+#' @param mode The field mode. Possible values include: `"NULLABLE"`,
+#'   `"REQUIRED"`, and `"REPEATED"`.
 #' @param fields For a field of type "record", a list of sub-fields.
-#' @param description Field description
+#' @param description The field description. The maximum length is 1,024
+#'   characters.
 #' @param x A list of `bg_fields`
+#' @seealso `bq_field()` corresponds to a `TableFieldSchema`, see
+#' <https://cloud.google.com/bigquery/docs/reference/rest/v2/tables#TableFieldSchema>
+#' for more details.
 #' @export
 #' @examples
 #' bq_field("name", "string")
@@ -21,7 +31,10 @@
 #' # as_bq_fields() can also take a data frame
 #' as_bq_fields(mtcars)
 bq_field <- function(name, type, mode = "NULLABLE", fields = list(), description = NULL) {
-  assert_that(is.string(name), is.string(type), is.string(mode))
+  check_string(name)
+  check_string(type)
+  check_string(mode)
+  check_string(description, allow_null = TRUE)
 
   structure(
     list(
@@ -78,6 +91,9 @@ as_bq_field.list <- function(x) {
 #' @export
 #' @rdname bq_field
 as_bq_fields <- function(x) UseMethod("as_bq_fields")
+
+#' @export
+as_bq_fields.NULL <- function(x) x
 
 #' @export
 as_bq_fields.bq_fields <- function(x) x
@@ -140,6 +156,6 @@ data_type <- function(x) {
     logical = "BOOLEAN",
     double = "FLOAT",
     integer = "INTEGER",
-    stop("Unsupported type: ", typeof(x), call. = FALSE)
+    cli::cli_abort("Unsupported type {.str {typeof(x)}}.")
   )
 }

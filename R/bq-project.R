@@ -15,15 +15,11 @@
 #' * `bq_project_jobs()`: a list of [bq_job]s.
 #'
 #' @name api-project
-#' @examples
-#' if (bq_authable()) {
+#' @examplesIf bq_testable()
 #' bq_project_datasets("bigquery-public-data")
 #' bq_project_datasets("githubarchive")
-#' }
 #'
-#' if (bq_testable()) {
 #' bq_project_jobs(bq_test_project(), page_size = 10)
-#' }
 NULL
 
 #' @export
@@ -31,7 +27,10 @@ NULL
 #' @param x A string giving a project name.
 #' @inheritParams bq_projects
 bq_project_datasets <- function(x, page_size = 100, max_pages = 1, warn = TRUE) {
-  assert_that(is.string(x))
+  check_string(x)
+  check_number_whole(page_size, min = 1)
+  check_number_whole(max_pages, min = 1, allow_infinite = TRUE)
+  check_bool(warn)
 
   pages <- bq_get_paginated(
     bq_path(x, ""),
@@ -51,7 +50,10 @@ bq_project_datasets <- function(x, page_size = 100, max_pages = 1, warn = TRUE) 
 #' @export
 #' @rdname api-project
 bq_project_jobs <- function(x, page_size = 100, max_pages = 1, warn = TRUE) {
-  assert_that(is.string(x))
+  check_string(x)
+  check_number_whole(page_size, min = 1)
+  check_number_whole(max_pages, min = 1, allow_infinite = TRUE)
+  check_bool(warn)
 
   pages <- bq_get_paginated(
     bq_path(x, jobs = ""),

@@ -12,8 +12,7 @@ NULL
 #' @export
 #' @usage NULL
 #' @import methods DBI
-#' @examples
-#' if (bq_testable()) {
+#' @examplesIf bq_testable()
 #' con <- DBI::dbConnect(
 #'   bigquery(),
 #'   project = "publicdata",
@@ -41,8 +40,6 @@ NULL
 #' dbFetch(res, 10)
 #' dbFetch(res, -1)
 #' DBI::dbHasCompleted(res)
-#'
-#' }
 bigquery <- function() {
   new("BigQueryDriver")
 }
@@ -76,12 +73,24 @@ setClass("BigQueryDriver", contains = "DBIDriver")
 #' @export
 setMethod(
   "dbConnect", "BigQueryDriver",
-  function(drv, project, dataset = NULL, billing = project,
+  function(drv,
+           project,
+           dataset = NULL,
+           billing = project,
            page_size = 1e4,
            quiet = NA,
            use_legacy_sql = FALSE,
            bigint = c("integer", "integer64", "numeric", "character"),
            ...) {
+
+    check_string(project)
+    check_string(dataset, allow_null = TRUE)
+    check_string(billing)
+    check_number_whole(page_size, min = 1)
+    check_bool(quiet, allow_na = TRUE)
+    check_bool(use_legacy_sql)
+    bigint <- arg_match(bigint)
+
     BigQueryConnection(
       project = project,
       dataset = dataset,
@@ -89,7 +98,7 @@ setMethod(
       page_size = page_size,
       quiet = quiet,
       use_legacy_sql = use_legacy_sql,
-      bigint = match.arg(bigint)
+      bigint = bigint
     )
   }
 )

@@ -13,8 +13,7 @@
 #' @param ... Passed on to [bq_perform_query()]
 #' @name bq_query
 #' @return A [bq_table]
-#' @examples
-#' if (bq_testable()) {
+#' @examplesIf bq_testable()
 #' # Querying a project requires full name in query
 #' tb <- bq_project_query(
 #'   bq_test_project(),
@@ -38,15 +37,23 @@
 #'   billing = bq_test_project()
 #' )
 #' bq_table_download(tb)
-#' }
 NULL
 
 #' @export
 #' @rdname bq_query
-bq_project_query <- function(x, query,
+bq_project_query <- function(x,
+                             query,
                              destination_table = NULL,
                              ...,
                              quiet = NA) {
+
+  check_string(x)
+  query <- as_query(query)
+  if (!is.null(destination_table)) {
+    destination_table <- as_bq_table(destination_table)
+  }
+  check_bool(quiet, allow_na = TRUE)
+
   job <- bq_perform_query(
     query,
     billing = x,
@@ -59,12 +66,22 @@ bq_project_query <- function(x, query,
 
 #' @export
 #' @rdname bq_query
-bq_dataset_query <- function(x, query,
+bq_dataset_query <- function(x,
+                             query,
                              destination_table = NULL,
                              ...,
                              billing = NULL,
                              quiet = NA) {
+
+
   x <- as_bq_dataset(x)
+  query <- as_query(query)
+  if (!is.null(destination_table)) {
+    destination_table <- as_bq_table(destination_table)
+  }
+  check_string(billing, allow_null = TRUE)
+  check_bool(quiet, allow_na = TRUE)
+
   job <- bq_perform_query(
     query,
     billing = billing %||% x$project,
@@ -74,31 +91,4 @@ bq_dataset_query <- function(x, query,
   )
   bq_job_wait(job, quiet = quiet)
   bq_job_table(job)
-}
-
-# Similar to bq_perform_query: except uses dryRun, and hence result
-# processing is totally different
-bq_query_fields <- function(query, x, ..., default_dataset = NULL, use_legacy_sql = FALSE) {
-  assert_that(is.string(x), is.string(query))
-
-  url <- bq_path(x, jobs = "")
-
-  query <- list(
-    query = unbox(query),
-    useLegacySql = unbox(use_legacy_sql)
-  )
-  if (!is.null(default_dataset)) {
-    query$defaultDataset <- datasetReference(default_dataset)
-  }
-
-  body <- list(configuration = list(query = query, dryRun = TRUE))
-
-  res <- bq_post(
-    url,
-    body = bq_body(body, ...),
-    query = list(fields = "statistics(query(schema(fields)))")
-  )
-
-  fields <- res$statistics$query$schema$fields
-  bq_fields(lapply(fields, as_bq_field))
 }

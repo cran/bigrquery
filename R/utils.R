@@ -5,44 +5,21 @@ as_df <- function(x) {
   x
 }
 
-bq_quiet <- function(x) {
+check_quiet <- function(x, arg = caller_arg(x), call = caller_env(call)) {
+  check_bool(x, allow_na = TRUE, arg = arg, call = call)
+
   if (is.na(x)) {
-    !is_interactive()
+    !(is_interactive() || is_snapshot())
   } else {
     x
   }
 }
 
-bq_progress <- function(..., quiet = NA) {
-  # quiet = FALSE -> show immediately; otherwise wait 1 second
-  delay <- if (isFALSE(quiet)) 0 else 1
-  quiet <- bq_quiet(quiet)
-
-  if (quiet) {
-    list(
-      tick = function(...) {},
-      update = function(...) {}
-    )
-  } else {
-    progress <- progress::progress_bar$new(..., show_after = delay)
-    progress$tick(0)
-    progress
-  }
-}
-
 bq_check_namespace <- function(pkg, bq_type) {
-  if (requireNamespace(pkg, quietly = TRUE)) {
-    return()
-  }
-
-  abort(glue(
-    "Package '{pkg}' must be installed to load BigQuery field with type '{bq_type}'"
-  ))
+  check_installed(pkg, sprintf("to parse BigQuery '%s' fields.", bq_type))
 }
 
 isFALSE <- function(x) identical(x, FALSE)
-
-is_string <- function(x) length(x) == 1L && is.character(x)
 
 cat_line <- function(...) {
   cat(paste0(..., "\n", collapse = ""))
@@ -77,3 +54,20 @@ print.bq_bytes <- function(x, ...) {
   cat_line(prettyunits::pretty_bytes(unclass(x)))
 }
 # nocov end
+
+defer <- function (expr, env = caller_env(), after = FALSE) {
+  thunk <- as.call(list(function() expr))
+  do.call(on.exit, list(thunk, TRUE, after), envir = env)
+}
+
+in_pkgdown <- function(){
+  identical(Sys.getenv("IN_PKGDOWN"), "true")
+}
+
+as_query <- function(x, error_arg = caller_arg(x), error_call = caller_env()) {
+  if (is(x, "SQL")) {
+    x <- x@.Data
+  }
+  check_string(x, arg = error_arg, call = error_call)
+  x
+}

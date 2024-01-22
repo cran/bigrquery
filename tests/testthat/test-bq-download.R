@@ -39,17 +39,22 @@ test_that("can specify large integers in page params", {
 })
 
 test_that("errors when table is known to be incomplete", {
+  # If this snapshot changes, it's likely because the table has been updated
+
   skip_if_no_auth()
 
   tb <- as_bq_table("bigquery-public-data.chicago_taxi_trips.taxi_trips")
-  expect_error(
+  expect_snapshot(
     bq_table_download(
       tb,
       n_max = 35000,
       page_size = 35000,
       bigint = "integer64"
     ),
-    "incomplete"
+    transform = function(x) {
+      gsub("[0-9,]+ rows were received", "{n} rows were received", x, perl = TRUE)
+    },
+    error = TRUE
   )
 })
 
@@ -176,6 +181,17 @@ test_that("can convert date time types", {
   expect_equal(df$timestamp, base)
   expect_equal(df$date, as.Date(base))
   expect_equal(df$time, hms::hms(hours = 3, minutes = 4, seconds = 5.67))
+})
+
+
+test_that("can parse fractional seconds", {
+  x <- c(
+    "2000-01-02T03:04:05.67",
+    "2000-01-02T03:04:05",
+    "2000-01-02T03:04:05.123456"
+  )
+  parsed <- as.numeric(bq_datetime_parse(x))
+  expect_equal(parsed - trunc(parsed), c(0.67, 0, 0.123456), tolerance = 1e-6)
 })
 
 test_that("correctly parse logical values" ,{

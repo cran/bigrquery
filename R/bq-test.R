@@ -19,13 +19,11 @@
 #'   tied to the lifetime of the object that it returns.
 #' @export
 #' @keywords internal
-#' @examples
-#' if (bq_testable()) {
-#'   ds <- bq_test_dataset()
-#'   bq_mtcars <- bq_table_upload(bq_table(ds, "mtcars"), mtcars)
+#' @examplesIf bq_testable()
+#' ds <- bq_test_dataset()
+#' bq_mtcars <- bq_table_upload(bq_table(ds, "mtcars"), mtcars)
 #'
-#'   # dataset and table will be automatically deleted when ds is GC'd
-#' }
+#' # dataset and table will be automatically deleted when ds is GC'd
 bq_test_project <- function() {
   if (is_testing() && !bq_authable()) {
     testthat::skip("No BigQuery access credentials available")
@@ -38,14 +36,11 @@ bq_test_project <- function() {
 
   if (is_testing()) {
     testthat::skip("BIGQUERY_TEST_PROJECT not set")
+  } else {
+    cli::cli_abort(
+      "{.envvar BIGQUERY_TEST_PROJECT} envvar must to set to a project name."
+    )
   }
-
-  stop(
-    "To run bigrquery tests you must have BIGQUERY_TEST_PROJECT envvar set ",
-    "to name of project which has billing set up and to which you have ",
-    "write access",
-    call. = FALSE
-  )
 }
 
 #' @export
@@ -61,7 +56,7 @@ bq_test_init <- function(name = "basedata") {
 
   bq_mtcars <- bq_table(basedata, "mtcars")
   if (!bq_table_exists(bq_mtcars)) {
-    bq_table_upload(bq_mtcars, values = datasets::mtcars)
+    job <- bq_table_upload(bq_mtcars, values = datasets::mtcars)
   }
 }
 
@@ -80,6 +75,11 @@ bq_test_dataset <- function(name = random_name(), location = "US") {
   attr(ds, "env") <- env
 
   ds
+}
+
+bq_test_table <- function() {
+  ds <- env_cache(the, "test_dataset", bq_test_dataset())
+  bq_table(ds, random_name())
 }
 
 #' @export
@@ -104,13 +104,11 @@ gs_test_bucket <- function() {
 
   if (is_testing()) {
     testthat::skip("BIGQUERY_TEST_BUCKET not set")
+  } else {
+    cli::cli_abort(
+      "{.envvar BIGQUERY_TEST_BUCKET} must be set to a bucket name."
+    )
   }
-
-  stop(
-    "To run bigrquery extract/load tests you must have BIGQUERY_TEST_BUCKET set ",
-    "to name of the bucket where `bq_test_project()` has write acess",
-    call. = FALSE
-  )
 }
 
 
@@ -126,6 +124,8 @@ random_name <- function(n = 10) {
 }
 
 is_testing <- function() identical(Sys.getenv("TESTTHAT"), "true")
+
+is_snapshot <- function() identical(Sys.getenv("TESTTHAT_IS_SNAPSHOT"), "true")
 
 skip_if_no_auth <- function() {
   testthat::skip_if_not(bq_has_token(), "Authentication not available")

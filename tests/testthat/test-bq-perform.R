@@ -1,8 +1,9 @@
 test_that("bq_perform_upload creates job that succeeds", {
-  ds <- bq_test_dataset()
-  bq_mtcars <- bq_table(ds, "mtcars")
+  withr::local_options(cli.progress_show_after = 10)
 
+  bq_mtcars <- bq_test_table()
   job <- bq_perform_upload(bq_mtcars, mtcars)
+
   expect_s3_class(job, "bq_job")
   expect_snapshot({
     bq_job_wait(job, quiet = FALSE)
@@ -13,10 +14,10 @@ test_that("bq_perform_upload creates job that succeeds", {
 })
 
 test_that("bq_perform_copy creates job that succeeds", {
-  ds <- bq_test_dataset()
+  withr::local_options(cli.progress_show_after = 10)
 
   src <- as_bq_table("bigquery-public-data.moon_phases.moon_phases")
-  dst <- bq_table(ds, "my_moon")
+  dst <- bq_test_table()
 
   job <- bq_perform_copy(src, dst)
   expect_s3_class(job, "bq_job")
@@ -34,7 +35,6 @@ test_that("bq_perform_copy creates job that succeeds", {
 
 test_that("can round trip extract + load", {
   ds_public <- bq_dataset("bigquery-public-data", "moon_phases")
-  ds_mine <- bq_test_dataset()
 
   tb <- bq_dataset_query(ds_public,
     query = "SELECT COUNT(*) as count FROM moon_phases",
@@ -47,7 +47,7 @@ test_that("can round trip extract + load", {
   job <- bq_perform_extract(tb, tmp)
   bq_job_wait(job)
 
-  tb_ks <- bq_table(ds_mine, "natality_ks")
+  tb_ks <- bq_test_table()
   job <- bq_perform_load(tb_ks, tmp)
   bq_job_wait(job)
 

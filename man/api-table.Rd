@@ -52,7 +52,7 @@ snake_case names are automatically converted to camelCase.}
 \item{dest}{Source and destination \link{bq_table}s.}
 
 \item{quiet}{If \code{FALSE}, displays progress bar; if \code{TRUE} is silent;
-if \code{NA} displays progress bar only for long-running jobs.}
+if \code{NA} picks based on whether or not you're in an interactive context.}
 
 \item{values}{Data frame of values to insert.}
 
@@ -79,16 +79,15 @@ can be specified. Also, the '*' wildcard character is not allowed.}
 \item \code{bq_table_copy()}, \code{bq_table_create()}, \code{bq_table_delete()}, \code{bq_table_upload()}:
 an invisible \link{bq_table}
 \item \code{bq_table_exists()}: either \code{TRUE} or \code{FALSE}.
-\item \code{bq_table_download()}: a data frame
 \item \code{bq_table_size()}: the size of the table in bytes
 \item \code{bq_table_fields()}: a \link{bq_fields}.
 }
 }
 \description{
 Basic create-read-update-delete verbs for tables, as well as functions
-for uploading and downloading data in to/from memory (\code{bq_table_upload()},
-\code{bq_table_download()}), and saving to/loading from Google Cloud Storage
-(\code{bq_table_load()}, \code{bq_table_save()}).
+uploading data (\code{bq_table_upload()}), saving to/loading from Google
+Cloud Storage (\code{bq_table_load()}, \code{bq_table_save()}), and getting
+various values from the metadata.
 }
 \section{Google BigQuery API documentation}{
 
@@ -100,21 +99,22 @@ for uploading and downloading data in to/from memory (\code{bq_table_upload()},
 }
 
 \examples{
-if (bq_testable()) {
+\dontshow{if (bq_testable()) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
 ds <- bq_test_dataset()
 
-bq_mtcars <- bq_table_create(
-  ds,
-  "mtcars",
+bq_mtcars <- bq_table(ds, "mtcars")
+bq_table_exists(bq_mtcars)
+
+bq_table_create(
+  bq_mtcars,
+  fields = mtcars,
   friendly_name = "Motor Trend Car Road Tests",
   description = "The data was extracted from the 1974 Motor Trend US magazine",
   labels = list(category = "example")
 )
-bq_mtcars <- bq_table(ds, "mtcars")
 bq_table_exists(bq_mtcars)
 
 bq_table_upload(bq_mtcars, mtcars)
-bq_table_exists(bq_mtcars)
 
 bq_table_fields(bq_mtcars)
 bq_table_size(bq_mtcars)
@@ -125,5 +125,5 @@ bq_table_exists(bq_mtcars)
 
 my_natality <- bq_table(ds, "mynatality")
 bq_table_copy("publicdata.samples.natality", my_natality)
-}
+\dontshow{\}) # examplesIf}
 }

@@ -1,44 +1,19 @@
-// [[Rcpp::depends(rapidjsonr)]]
-#include <Rcpp.h>
+#include <cpp11.hpp>
+
 #include <rapidjson/document.h>
 #include <rapidjson/istreamwrapper.h>
 #include "rapidjson/filereadstream.h"
-#include <RProgress.h>
+#include <cli/progress.h>
 #include "integer64.h"
 #include "base64.h"
 
+#include <vector>
 #include <ctime>
 #include <cstdio>
 #include <climits>
 #include <stdlib.h>
 #include <fstream>
 #include <errno.h>
-
-#if defined(_WIN32) || defined(_WIN64)
-extern "C" {
-time_t timegm(struct tm *tm);
-char* strptime (const char *buf, const char *fmt, struct tm *timeptr);
-}
-#endif
-
-#if (defined(__sun) || defined(sun))
-extern "C" {
-  time_t timegm(struct tm *tm);
-}
-#endif
-
-
-// This is currently not used in favor of parse_int64(const char* x) .
-long int parse_int(const char* x) {
-  errno = 0;
-  long int y = strtol(x, NULL, 10);
-
-  if (errno != 0 || y > INT_MAX || y < INT_MIN) {
-    return NA_INTEGER;
-  } else {
-    return y;
-  }
-}
 
 int64_t parse_int64(const char* x) {
   errno = 0;
@@ -53,7 +28,7 @@ int64_t parse_int64(const char* x) {
 // this will throw an exception with the appropriate error message
 // if the package is not installed
 void check_namespace(const char* pkg, const char* bq_type) {
-  Rcpp::Function checkNamespaceFun("bq_check_namespace", "bigrquery");
+  auto checkNamespaceFun = cpp11::package("bigrquery")["bq_check_namespace"];
   checkNamespaceFun(pkg, bq_type);
 }
 
@@ -63,12 +38,10 @@ enum BqType {
   BQ_BOOLEAN,
   BQ_STRING,
   BQ_TIMESTAMP,
-  BQ_TIME,
-  BQ_DATE,
-  BQ_DATETIME,
   BQ_RECORD,
   BQ_GEOGRAPHY,
-  BQ_BYTES
+  BQ_BYTES,
+  BQ_UNKNOWN
 };
 
 BqType parse_bq_type(std::string x) {
@@ -84,12 +57,6 @@ BqType parse_bq_type(std::string x) {
     return BQ_STRING;
   } else if (x == "TIMESTAMP") {
     return BQ_TIMESTAMP;
-  } else if (x == "TIME") {
-    return BQ_TIME;
-  } else if (x == "DATE") {
-    return BQ_DATE;
-  } else if (x == "DATETIME") {
-    return BQ_DATETIME;
   } else if (x == "RECORD") {
     return BQ_RECORD;
   } else if (x == "GEOGRAPHY") {
@@ -97,7 +64,7 @@ BqType parse_bq_type(std::string x) {
   } else if (x == "BYTES") {
     return BQ_BYTES;
   } else {
-    Rcpp::stop("Unknown type %s", x);
+    return BQ_UNKNOWN;
   }
 }
 
@@ -113,28 +80,30 @@ class BqField {
 private:
   std::string name_;
   BqType type_;
+  std::string type_str_;
   bool array_;
   std::vector<BqField> fields_;
 
 public:
-  BqField(std::string name, BqType type, bool array = false) :
-      name_(name), type_(type), array_(array)
+  BqField(std::string name, BqType type, std::string type_str, bool array = false) :
+      name_(name), type_(type), type_str_(type_str), array_(array)
   {
   }
 
   BqField(std::string name, std::vector<BqField> fields, bool array = false) :
-      name_(name), type_(BQ_RECORD), array_(array), fields_(fields)
+      name_(name), type_(BQ_RECORD), type_str_("RECORD"), array_(array), fields_(fields)
   {
   }
 
   BqField(const rapidjson::Value& field) {
     if (!field.IsObject()) {
-      Rcpp::stop("Invalid field spec");
+      cpp11::stop("Invalid field spec");
     }
 
     name_ = field["name"].GetString();
     array_ = field.HasMember("mode") && std::string(field["mode"].GetString()) == "REPEATED";
-    type_ = parse_bq_type(field["type"].GetString());
+    type_str_ = field["type"].GetString();
+    type_ = parse_bq_type(type_str_);
 
     if (field.HasMember("fields")) {
       const rapidjson::Value& fields = field["fields"];
@@ -150,51 +119,48 @@ public:
 
   SEXP vectorInit(int n, bool array) const {
     if (array) {
-      return Rcpp::List(n);
+      return cpp11::writable::list(n);
     }
 
     switch(type_) {
     case BQ_INTEGER: {
-        Rcpp::DoubleVector out(n);
+        cpp11::writable::doubles out(n);
         out.attr("class") = "integer64";
         return out;
       }
     case BQ_FLOAT:
-      return Rcpp::DoubleVector(n);
+      return cpp11::writable::doubles(n);
     case BQ_BOOLEAN:
-      return Rcpp::LogicalVector(n);
+      return cpp11::writable::logicals(n);
     case BQ_STRING:
-      return Rcpp::CharacterVector(n);
-    case BQ_TIMESTAMP:
-    case BQ_DATETIME:
-      return Rcpp::DatetimeVector(n, "UTC");
-    case BQ_DATE:
-      return Rcpp::DateVector(n);
-    case BQ_TIME: {
-        check_namespace("hms", "TIME");
-        Rcpp::DoubleVector out(n);
-        out.attr("class") = Rcpp::CharacterVector::create("hms", "difftime");
-        out.attr("units") = "secs";
+      return cpp11::writable::strings(n);
+    case BQ_TIMESTAMP: {
+        cpp11::writable::doubles out(n);
+        out.attr("class") = {"POSIXct", "POSIXt"};
+        out.attr("tzone") = "UTC";
         return out;
       }
     case BQ_RECORD:
-      return Rcpp::List(n);
+      return cpp11::writable::list(n);
     case BQ_GEOGRAPHY: {
         check_namespace("wk", "GEOGRAPHY");
-        Rcpp::CharacterVector out(n);
-        out.attr("class") = Rcpp::CharacterVector::create("wk_wkt", "wk_vctr");
+        cpp11::writable::strings out(n);
+        out.attr("class") = {"wk_wkt", "wk_vctr"};
         return out;
       }
     case BQ_BYTES: {
         check_namespace("blob", "BYTES");
-        Rcpp::List out(n);
-        out.attr("class") = Rcpp::CharacterVector::create("blob", "vctrs_list_of", "vctrs_vctr", "list");
-        out.attr("ptype") = Rcpp::RawVector::create();
+        cpp11::writable::list out(n);
+        out.attr("class") = {"blob", "vctrs_list_of", "vctrs_vctr", "list"};
+        out.attr("ptype") = cpp11::writable::raws((R_xlen_t) 0);
         return out;
       }
+    default: {
+      cpp11::writable::strings out(n);
+      out.attr("bq_type") = type_str_;
+      return out;
+      }
     }
-
-    Rcpp::stop("Unknown type");
   }
 
   SEXP vectorInit(int n) const  {
@@ -204,10 +170,10 @@ public:
   void vectorSet(SEXP x, int i, const rapidjson::Value& v, bool array) const {
     if (array && type_ != BQ_RECORD) {
       if (!v.IsArray())
-        Rcpp::stop("Not an array [1]");
+        cpp11::stop("Not an array [1]");
 
       int n = v.Size();
-      Rcpp::RObject out = vectorInit(n, false);
+      cpp11::sexp out = vectorInit(n, false);
       for (int j = 0; j < n; ++j) {
         vectorSet(out, j, v[j]["v"], false);
       }
@@ -232,50 +198,13 @@ public:
         INTEGER(x)[i] = NA_LOGICAL;
       }
       break;
+    case BQ_UNKNOWN:
     case BQ_STRING:
       if (v.IsString()) {
-        Rcpp::RObject chr = Rf_mkCharLenCE(v.GetString(), v.GetStringLength(), CE_UTF8);
+        cpp11::sexp chr = Rf_mkCharLenCE(v.GetString(), v.GetStringLength(), CE_UTF8);
         SET_STRING_ELT(x, i, chr);
       } else {
         SET_STRING_ELT(x, i, NA_STRING);
-      }
-      break;
-    case BQ_TIME:
-      if (v.IsString()) {
-        struct tm dtm;
-        char* parsed = strptime(v.GetString(), "%H:%M:%S", &dtm);
-
-        if (parsed == NULL) {
-          REAL(x)[i] = NA_REAL;
-        } else {
-          REAL(x)[i] = dtm.tm_hour * 3600 + dtm.tm_min * 60 + dtm.tm_sec +
-            parse_partial_seconds(parsed);
-        }
-      } else {
-        REAL(x)[i] = NA_REAL;
-      }
-      break;
-    case BQ_DATE:
-      if (v.IsString()) {
-        Rcpp::Date date(v.GetString());
-        REAL(x)[i] = date.getDate();
-      } else {
-        REAL(x)[i] = NA_REAL;
-      }
-      break;
-    case BQ_DATETIME:
-      if (v.IsString()) {
-        struct tm dtm;
-        char* parsed = strptime(v.GetString(), "%Y-%m-%dT%H:%M:%S", &dtm);
-        time_t utc = timegm(&dtm);
-
-        if (parsed == NULL || utc == -1) {
-          REAL(x)[i] = NA_REAL;
-        } else {
-          REAL(x)[i] = utc + parse_partial_seconds(parsed);
-        }
-      } else {
-        REAL(x)[i] = NA_REAL;
       }
       break;
     case BQ_RECORD:
@@ -283,7 +212,7 @@ public:
       break;
     case BQ_GEOGRAPHY:
       if (v.IsString()) {
-        Rcpp::RObject chr = Rf_mkCharLenCE(v.GetString(), v.GetStringLength(), CE_UTF8);
+        cpp11::sexp chr = Rf_mkCharLenCE(v.GetString(), v.GetStringLength(), CE_UTF8);
         SET_STRING_ELT(x, i, chr);
       } else {
         SET_STRING_ELT(x, i, NA_STRING);
@@ -291,9 +220,7 @@ public:
       break;
     case BQ_BYTES:
       if (v.IsString()) {
-        Rcpp::RawVector chr(v.GetStringLength());
-        memcpy(&(chr[0]), v.GetString(), v.GetStringLength());
-        SET_VECTOR_ELT(x, i, base64_decode(chr));
+        SET_VECTOR_ELT(x, i, base64_decode(v.GetString(), v.GetStringLength()));
       } else {
         SET_VECTOR_ELT(x, i, R_NilValue);
       }
@@ -304,9 +231,8 @@ public:
   SEXP recordValue(const rapidjson::Value& v) const {
     int p = fields_.size();
 
-    Rcpp::List out(p);
-    Rcpp::CharacterVector names(p);
-    out.attr("names") = names;
+    cpp11::writable::list out(p);
+    cpp11::writable::strings names(p);
 
     if (!array_) {
       if (!v.IsObject())
@@ -315,14 +241,15 @@ public:
       const rapidjson::Value& f = v["f"];
       // f is array of fields
       if (!f.IsArray())
-        Rcpp::stop("Not array [2]");
+        cpp11::stop("Not array [2]");
 
       for (int j = 0; j < p; ++j) {
         const BqField& field = fields_[j];
         const rapidjson::Value& vs = f[j]["v"];
 
         int n = (field.array_) ? vs.Size() : 1;
-        Rcpp::RObject col = field.vectorInit(n, false);
+        cpp11::sexp col = field.vectorInit(n, false);
+
         if (field.array_) {
           for (int i = 0; i < n; ++i) {
             field.vectorSet(col, i, vs[i]["v"], false);
@@ -342,16 +269,13 @@ public:
         out[j] = field.vectorInit(n);
         names[j] = field.name_;
       }
-      out.attr("class") = Rcpp::CharacterVector::create("tbl_df", "tbl", "data.frame");
-      out.attr("row.names") = Rcpp::IntegerVector::create(NA_INTEGER, -n);
-
-      if (n == 0)
-        return out;
+      out.attr("class") = {"tbl_df", "tbl", "data.frame"};
+      out.attr("row.names") = {NA_INTEGER, -n};
 
       for (int i = 0; i < n; ++i) {
         const rapidjson::Value& f = v[i]["v"]["f"];
         if (!f.IsArray())
-          Rcpp::stop("Not an array [3]");
+          cpp11::stop("Not an array [3]");
 
         for (int j = 0; j < p; ++j) {
           fields_[j].vectorSet(out[j], i, f[j]["v"]);
@@ -359,6 +283,7 @@ public:
       }
     }
 
+    out.attr("names") = names;
     return out;
   }
 
@@ -381,24 +306,24 @@ std::vector<BqField> bq_fields_parse(const rapidjson::Value& meta) {
   return fields;
 }
 
-Rcpp::List bq_fields_init(const std::vector<BqField>& fields, int n) {
+cpp11::list bq_fields_init(const std::vector<BqField>& fields, int n) {
   int p = fields.size();
 
-  Rcpp::List out(p);
-  Rcpp::CharacterVector names(p);
+  cpp11::writable::list out(p);
+  cpp11::writable::strings names(p);
   for (int j = 0; j < p; ++j) {
     out[j] = fields[j].vectorInit(n);
     names[j] = fields[j].name();
   };
-  out.attr("class") = Rcpp::CharacterVector::create("tbl_df", "tbl", "data.frame");
+  out.attr("class") = {"tbl_df", "tbl", "data.frame"};
   out.attr("names") = names;
-  out.attr("row.names") = Rcpp::IntegerVector::create(NA_INTEGER, -n);
+  out.attr("row.names") = {NA_INTEGER, -n};
 
   return out;
 }
 
 int bq_fields_set(const rapidjson::Value& data,
-                  Rcpp::List out,
+                  cpp11::writable::list out,
                   const std::vector<BqField>& fields,
                   int offset
                   ) {
@@ -420,7 +345,7 @@ int bq_fields_set(const rapidjson::Value& data,
   return n;
 }
 
-// [[Rcpp::export]]
+[[cpp11::register]]
 SEXP bq_parse(std::string meta_s, std::string data_s) {
   rapidjson::Document meta_d;
   meta_d.Parse(&meta_s[0]);
@@ -431,19 +356,19 @@ SEXP bq_parse(std::string meta_s, std::string data_s) {
 
   int n = (values_d.HasMember("rows")) ? values_d["rows"].Size() : 0;
 
-  Rcpp::List out = bq_fields_init(fields, n);
+  cpp11::writable::list out = bq_fields_init(fields, n);
   bq_fields_set(values_d, out, fields, 0);
 
   return out;
 }
 
-// [[Rcpp::export]]
+[[cpp11::register]]
 SEXP bq_field_init(std::string json, std::string value = "") {
   rapidjson::Document d1;
   d1.Parse(&json[0]);
 
   BqField field(d1);
-  Rcpp::RObject out = field.vectorInit(1);
+  cpp11::sexp out = field.vectorInit(1);
 
   if (value != "") {
     rapidjson::Document d2;
@@ -455,7 +380,7 @@ SEXP bq_field_init(std::string json, std::string value = "") {
   return out;
 }
 
-// [[Rcpp::export]]
+[[cpp11::register]]
 SEXP bq_parse_files(std::string schema_path,
                     std::vector<std::string> file_paths,
                     int n,
@@ -468,13 +393,15 @@ SEXP bq_parse_files(std::string schema_path,
   schema_doc.ParseStream(schema_stream_w);
 
   std::vector<BqField> fields = bq_fields_parse(schema_doc);
-  Rcpp::List out = bq_fields_init(fields, n);
+  cpp11::writable::list out = bq_fields_init(fields, n);
 
   std::vector<std::string>::const_iterator it = file_paths.begin(),
     it_end = file_paths.end();
 
-  RProgress::RProgress pb("Parsing [:bar] ETA: :eta");
-  pb.set_total(file_paths.size());
+  const char *config_names[] = {"format", ""};
+  SEXP config = PROTECT(Rf_mkNamed(VECSXP, config_names));
+  SET_VECTOR_ELT(config, 0, Rf_mkString("Parsing {cli::pb_bar} ETA: {cli::pb_eta}"));
+  SEXP pb = PROTECT(cli_progress_bar(file_paths.size(), config));
 
   int total_seen = 0;
   char readBuffer[100 * 1024];
@@ -486,23 +413,27 @@ SEXP bq_parse_files(std::string schema_path,
     values_doc.ParseStream(values_stream);
 
     if (values_doc.HasParseError()) {
-      Rcpp::stop("Failed to parse '%s'", *it);
+      UNPROTECT(2);
+      cpp11::stop("Failed to parse '%s'", it->c_str());
       fclose(values_file);
     }
 
     total_seen += bq_fields_set(values_doc, out, fields, total_seen);
     if (!quiet) {
-      pb.tick();
+      if (CLI_SHOULD_TICK) cli_progress_add(pb, 1);
     } else {
-      Rcpp::checkUserInterrupt();
+      cpp11::check_user_interrupt();
     };
 
     fclose(values_file);
   }
 
+  cli_progress_done(pb);
+  UNPROTECT(2);
+
   if (total_seen != n) {
     // Matches the error thrown from R if the first "test balloon" chunk is short.
-    Rcpp::stop("%d rows were requested, but only %d rows were received.\n  Leave `page_size` unspecified or use an even smaller value.", n, total_seen);
+    cpp11::stop("%d rows were requested, but only %d rows were received.\n  Leave `page_size` unspecified or use an even smaller value.", n, total_seen);
   }
 
   return out;
