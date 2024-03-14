@@ -1,3 +1,7 @@
+# bigrquery 1.5.1
+
+* Forward compatibility with upcoming dbplyr release (#601).
+
 # bigrquery 1.5.0
 
 ## Major changes
