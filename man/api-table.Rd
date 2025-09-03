@@ -66,7 +66,7 @@ number of files.}
 Google Cloud.
 
 For Google Cloud Storage URIs: Each URI can contain one
-`'*'`` wildcard character and it must come after the 'bucket' name.
+\code{'*'} wildcard character and it must come after the 'bucket' name.
 Size limits related to load jobs apply to external data sources.
 
 For Google Cloud Bigtable URIs: Exactly one URI can be specified and
@@ -99,7 +99,7 @@ various values from the metadata.
 }
 
 \examples{
-\dontshow{if (bq_testable()) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
+\dontshow{if (bq_testable()) withAutoprint(\{ # examplesIf}
 ds <- bq_test_dataset()
 
 bq_mtcars <- bq_table(ds, "mtcars")
